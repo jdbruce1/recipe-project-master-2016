@@ -20,7 +20,13 @@ class Ingredient:
             tokens_processed = []
             div_index = string_tokens.index("/")
             self.quant = div_strings(string_tokens[div_index-1],string_tokens[div_index+1])
-            string_tokens = string_tokens[:(div_index-1)] + string_tokens[(div_index+2):]
+            #print string_tokens
+            if div_index > 1:
+                self.quant += float(string_tokens[0])
+            #string_tokens = string_tokens[:(div_index-1)] + string_tokens[(div_index+2):]
+            string_tokens = string_tokens[(div_index+2):]
+            #print string_tokens
+            #print self.quant
         else:
             try:
                 self.quant = float(string_tokens[0])
@@ -29,7 +35,8 @@ class Ingredient:
                 self.quant = None
 
 
-        unitList = ["tablespoon", "teaspoon", "cup"]
+        unitList = ["tablespoon", "tablespoons", "teaspoons", "teaspoon", "cup", "cups", "pound", "pounds", "ounce", "ounces", "can", "cans","package", "packages", "jar", "jars"]
+        #NOTE: the unit list will eventually be stored in the DB, right?
         if string_tokens[0] in unitList:
             self.unit = string_tokens[0]
             string_tokens = string_tokens[1:]
@@ -44,6 +51,7 @@ class Ingredient:
             commaIndex = string_tokens.index(",")
             self.preparation += " ".join(string_tokens[commaIndex+1:])
             string_tokens = string_tokens[:commaIndex]
+            #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
 
         self.ingredient = " ".join(string_tokens)
 
@@ -75,12 +83,16 @@ def url_to_strings(url):
     strs_ingred = [raw.text for raw in raw_ingred]
     raw_steps = soup.find_all('span', 'recipe-directions__list--item')
     strs_steps = [raw.text for raw in raw_steps]
+    print strs_steps
     for string_in in strs_ingred:
         Ingredient(string_in)
     return 
 
 def main():
-    autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-
+    autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
 main()
 
