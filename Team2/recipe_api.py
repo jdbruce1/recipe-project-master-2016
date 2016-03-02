@@ -8,7 +8,7 @@ def autograder(url):
     details on correct format.'''
     # your code here
 
-    parse('http://allrecipes.com/recipe/44868/spicy-garlic-lime-chicken/?internalSource=popular&referringContentType=home%20page')
+    parse(url)
 
     return results
 
@@ -17,5 +17,8 @@ def parse(url):
 	html = response.read()
 	print html
 
+def main():
+	autograder('http://allrecipes.com/recipe/44868/spicy-garlic-lime-chicken/?internalSource=popular&referringContentType=home%20page')
 
+main()
 
