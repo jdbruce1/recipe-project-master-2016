@@ -6,29 +6,43 @@ import pymongo
 class KnowledgeBase:
 
     def __init__(self):
-        self.db = connectToKB()
+        self.db = self.connectToKB()
         self.collection = self.db.ingredients
 
+    def connectToKB(self):
+        client = MongoClient("mongodb://team2recipes:recipes@ds037415.mlab.com:37415/team2-recipes")
+        self.client = client
+        return client['team2-recipes']
 
     def searchIngredientsFor(self, ingredient):
         self.setCurrentCollection("ingredients")
-        result = self.queryOne("name", ingredient)
+        return self.searchInCollectionFor(ingredient)
+
+    def searchInCollectionFor(self, name):
+        result = self.queryOne("name", name)
         return result
+
 
     def getIngredientsWithParent(self, parent):
         self.setCurrentCollection("ingredients")
+        return self.getWithParent(parent)
+
+    def getWithParent(self, parent):
         return self.queryAllDict({("parent." + parent): {"$exists": True}})
 
     # the parent property can be stored as {"parent": "biggest.smaller.*.smallest"} and this function
     # will handle making it work
     def getIngredientsByProperties(self, properties):
+        self.setCurrentCollection("ingredients")
+        return self.getByProperties(properties)
+
+    def getByProperties(self, properties):
         try:
             parent = properties['parent']
             properties['parent.' + parent] = {"$exists": True}
             del properties['parent']
         except KeyError:
             pass
-        self.setCurrentCollection("ingredients")
         return self.queryAllDict(properties)
 
 
@@ -55,52 +69,126 @@ class KnowledgeBase:
     def queryAllDict(self, query):
         return self.collection.find(query)
 
+    def upsertNamedRecord(self, data):
+        try:
+            name = data['name']
+        except KeyError:
+            raise StandardError("Record to be updated must have name field.")
+        del data["name"]
+        for key in data.keys():
+            if data[key] is None:
+                del data[key]
+        updateQuery = {"$set": data}
+        return self.collection.update_one({"name": name}, updateQuery, upsert=True)
+
 
 
 
 # The following methods are used to make a UI to easily add to the database.
-def connectToKB():
-    client = MongoClient("mongodb://team2recipes:recipes@ds037415.mlab.com:37415/team2-recipes")
-    #client = MongoClient("ds037415.mlab.com", 37415)
-    return client['team2-recipes']
+
     #db.authenticate('team2recipes', 'recipes')
 
 
-def queryAllValuesOf(coll, field):
-    return (value[field] for value in coll.find().sort([(field, pymongo.ASCENDING)]))
 
 
-def queryOne(coll, field, value):
-    return queryOneDict(coll, {field:value})
 
+def collectionUI(db, coll, params):
+    print "You selected to work with " + coll + " in the database."
+    db.setCurrentCollection(coll)
+    run = True
+    goback = True
+    while run:
+        print "What would you like to do?"
+        print "\t1: List the names in " + coll + "."
+        print "\t2: Investigate a specific member of " + coll + "."
+        print "\t3: Add a member to " + coll + "."
+        print "\tB: Go back."
+        print "\tQ: Quit."
 
-def queryOneDict(coll, query):
-    return coll.find_one(query)
+        response = getInput()
+        if response == "1":
+            elements = db.queryAllValuesOf("name")
+            for el in elements:
+                print el
+        elif response == "2":
+            print "Which member would you like to know more about?"
+            response = getInput()
+            data = db.queryOne("name", response)
+            if data is None:
+                print "Unable to find a record of that member."
+            else:
+                printDict(data)
+        elif response == "3":
+            run = addOneToCollectionUI(db, coll, params)
+            goback = run
+        elif response == "B" or response == "b" or response == "back":
+            run = False
+        elif response == "Q" or response == "q" or response == "quit":
+            run = False
+            goback = False
 
+    return goback
 
-def queryAll(coll, field, value):
-    return queryAllDict(coll, {field:value})
+# UI to add a named, parented document to the specified collection
+def addOneToCollectionUI(db, coll, parameters):
+    print "You selected to add an member to " + coll + "."
+    db.setCurrentCollection(coll)
+    print "Name of member:"
+    name = getInput()
+    oldData = db.queryOne("name", name)
+    if oldData is not None:
+        print "This member of " + coll + " already exists.  Here is the current data on this member."
+        printDict(oldData)
+        print "If you continue, the data will be overwritten unless you leave the field blank. (B to return.)"
+        response = getInput()
+        if response == "B" or response == "b" or response == "back":
+            return True
+        elif response == "Q" or response == "q" or response == "quit":
+            return False
+    data = {"name":name}
+    print "Category lineage: (Format: biggestCategory.smaller.*.smallest)"
+    response = getInput()
+    if response is not None:
+        data['parent.'+response] = True
+    else:
+        data['parent'] = None
+    for key in parameters.keys():
+        message = parameters[key]
+        value = None
+        # input lists of values.. signalled by a list of messages (even if that list has one element)
+        if isinstance(message, list):
+            index = 0
+            if(index < len(message)):
+                print message
+            currData = getInput()
+            dataLst = []
+            while currData and not currData.lower() == 'done':
+                dataLst.append(currData)
+                index += 1
+                if(index < len(message)):
+                    print message[index]
+                currData = getInput()
+            if len(dataLst) > 0:
+                value = dataLst
+        else:
+            print parameters[key]
+            value = getInput()
 
-
-def queryAllDict(coll, query):
-    return coll.find(query)
-
-
-def upsertNamedRecord(coll, data):
-    try:
-        name = data['name']
-    except KeyError:
-        raise StandardError("Record to be updated must have name field.")
-    del data["name"]
-    for key in data.keys():
-        if data[key] is None:
-            del data[key]
-    updateQuery = {"$set": data}
-    return coll.update_one({"name": name}, updateQuery, upsert=True)
-
-
-def collectionUI(coll):
-    pass
+        data[key] = value
+    print "\nYou are about to create or update a record as follows:"
+    printDict(data)
+    print "Confirm? (Y to confirm, N to try again, B to go back)"
+    response = getInput()
+    if response in ['y', 'Y', 'yes']:
+        db.upsertNamedRecord(data)
+        print "Successfully created/updated member of " + coll + "."
+    elif response in ['n', 'N', 'no']:
+        return addOneToCollectionUI(db, coll, parameters)
+    elif response in ['b', 'B', 'back']:
+        return True
+    elif response in ['q', 'Q', 'quit']:
+        return False
+    return True
 
 def getInput():
     try:
@@ -111,6 +199,7 @@ def getInput():
 
 def ingredientUI(db):
     print "You selected to work with ingredients in the database."
+    db.setCurrentCollection("ingredients")
     run = True
     goback = True
     while run:
@@ -123,13 +212,13 @@ def ingredientUI(db):
 
         response = getInput()
         if response == "1":
-            ings = queryAllValuesOf(db.ingredients, "name")
+            ings = db.queryAllValuesOf("name")
             for ing in ings:
                 print ing
         elif response == "2":
             print "Which ingredient would you like to know more about?"
             response = getInput()
-            data = queryOne(db.ingredients, "name", response)
+            data = db.queryOne("name", response)
             if data is None:
                 print "Unable to find a record of that ingredient."
             else:
@@ -149,7 +238,7 @@ def addOneIngredientUI(db):
     print "You selected to add an ingredient."
     print "Name of ingredient:"
     name = getInput()
-    oldData = queryOne(db.ingredients, "name", name)
+    oldData = db.queryOne("name", name)
     if oldData is not None:
         print "This ingredient already exists.  Here is the current data on this ingredient."
         printDict(oldData)
@@ -177,7 +266,7 @@ def addOneIngredientUI(db):
     print "Confirm? (Y to confirm, N to try again, B to go back)"
     response = getInput()
     if response in ['y', 'Y', 'yes']:
-        upsertNamedRecord(db.ingredients, data)
+        db.upsertNamedRecord(data)
         print "Ingredient successfully created/updated."
     elif response in ['n', 'N', 'no']:
         return addOneIngredientUI(db)
@@ -194,16 +283,20 @@ def printDict(data):
     print '}'
 
 
-def addCookingUI(db):
-    pass
+def cookingUI(db):
+    return collectionUI(db, "cooking methods",
+                        {"heat source": "What is the heat source for this method?",
+                         "tools": ["List the tools used for this method. ('Done' to finish)"],
+                         "preparations": ["List the possible preparation methods for this cooking method. ('Done' to finish)"]})
 
-def addPrepUI(db):
-    pass
+def prepUI(db):
+    return collectionUI(db, "preparation methods",
+                        {"tools": ["List the possible tools used for this method. ('Done' to finish)"]})
 
 def main():
     print "Connecting to recipe knowledge base..."
     try:
-        db = connectToKB()
+        db = KnowledgeBase()
         print "Connected."
     except Exception:
         print "Failed to connect to knowledge base."
@@ -221,9 +314,9 @@ def main():
         if response == "1":
             run = ingredientUI(db)
         elif response == "2":
-            run = addCookingUI(db)
+            run = cookingUI(db)
         elif response == "3":
-            run = addPrepUI(db)
+            run = prepUI(db)
         elif response == "Q" or response == "q" or response == "quit":
             run = False
         else:
@@ -232,5 +325,6 @@ def main():
 
     print "Exiting..."
     db.client.close()
+
 
 main()
