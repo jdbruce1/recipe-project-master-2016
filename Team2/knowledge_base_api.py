@@ -9,6 +9,30 @@ class KnowledgeBase:
         self.db = connectToKB()
         self.collection = self.db.ingredients
 
+
+    def searchIngredientsFor(self, ingredient):
+        self.setCurrentCollection("ingredients")
+        result = self.queryOne("name", ingredient)
+        return result
+
+    def getIngredientsWithParent(self, parent):
+        self.setCurrentCollection("ingredients")
+        return self.queryAllDict({("parent." + parent): {"$exists": True}})
+
+    # the parent property can be stored as {"parent": "biggest.smaller.*.smallest"} and this function
+    # will handle making it work
+    def getIngredientsByProperties(self, properties):
+        try:
+            parent = properties['parent']
+            properties['parent.' + parent] = {"$exists": True}
+            del properties['parent']
+        except KeyError:
+            pass
+        self.setCurrentCollection("ingredients")
+        return self.queryAllDict(properties)
+
+
+
     def setCurrentCollection(self, collectionName):
         self.collection = self.db[collectionName]
 
@@ -17,7 +41,7 @@ class KnowledgeBase:
 
 
     def queryOne(self, field, value):
-        return queryOneDict(self.collection, {field:value})
+        return self.queryOneDict({field:value})
 
 
     def queryOneDict(self, query):
@@ -25,11 +49,13 @@ class KnowledgeBase:
 
 
     def queryAll(self, field, value):
-        return queryAllDict(self.collection, {field:value})
+        return self.queryAllDict({field:value})
 
 
     def queryAllDict(self, query):
         return self.collection.find(query)
+
+
 
 
 # The following methods are used to make a UI to easily add to the database.
@@ -69,8 +95,8 @@ def upsertNamedRecord(coll, data):
     for key in data.keys():
         if data[key] is None:
             del data[key]
-    updateQuery = {"$set" : data}
-    return coll.update_one({"name":name}, updateQuery, upsert=True)
+    updateQuery = {"$set": data}
+    return coll.update_one({"name": name}, updateQuery, upsert=True)
 
 
 def collectionUI(coll):
@@ -135,7 +161,11 @@ def addOneIngredientUI(db):
             return False
     data = {"name":name}
     print "Category lineage: (Format: biggestCategory.smaller.*.smallest)"
-    data['parent'] = getInput()
+    response = getInput()
+    if response is not None:
+        data['parent.'+response] = True
+    else:
+        data['parent'] = None
     print "Default unit:"
     data['default unit'] = getInput()
     print "1 count of this ingredient is how much default unit? (Quantity -> Volume)"
@@ -160,7 +190,7 @@ def addOneIngredientUI(db):
 def printDict(data):
     print '{'
     for key in data.keys():
-        print key + " : " + data[key]
+        print str(key) + " : " + str(data[key])
     print '}'
 
 
