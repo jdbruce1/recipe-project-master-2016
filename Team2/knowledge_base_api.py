@@ -81,6 +81,20 @@ class KnowledgeBase:
         updateQuery = {"$set": data}
         return self.collection.update_one({"name": name}, updateQuery, upsert=True)
 
+    #Takes in a category of food (subcategory of protein for veg transformation)
+    #and a transformation (vegetarian, pescatarian, or meatify) and returns
+    #the transformed category.
+    def categoryTransform(self, category, transformation):
+        if not(transformation == "vegetarian" or transformation == "pescatarian" or
+                transformation == "meatify"):
+            raise StandardError("Unrecognized transformation.")
+        self.setCurrentCollection("transforms")
+        response = self.queryOneDict({"$or" :
+                               [{"meatify": category},
+                                {"vegetarian": category},
+                                {"pescatarian": category}]})
+        return response[transformation]
+
 
 
 
@@ -293,7 +307,7 @@ def prepUI(db):
     return collectionUI(db, "preparation methods",
                         {"tools": ["List the possible tools used for this method. ('Done' to finish)"]})
 
-def main():
+def kbmain():
     print "Connecting to recipe knowledge base..."
     try:
         db = KnowledgeBase()
@@ -327,4 +341,4 @@ def main():
     db.client.close()
 
 
-main()
+kbmain()

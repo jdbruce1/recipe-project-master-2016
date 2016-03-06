@@ -2,12 +2,49 @@
 
 import urllib2
 import requests
+from pymongo import MongoClient
 from bs4 import BeautifulSoup
+import copy
 import nltk
+from knowledge_base_api import KnowledgeBase
+
+kb = KnowledgeBase()
+
+class Recipe:
+
+    def __init__(self, ingredients, steps):
+        self.ingredients = ingredients
+        self.steps = steps
+
+
+    def proteinTransform(self, transformType):
+
+        if not(transformType == "vegetarian" or transformType == "pescatarian" or
+                transformType == "meatify"):
+            raise StandardError("Unrecognized transformation.")
+        global kb
+        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
+
+        for ingredient in newRecipe.ingredients:
+            ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+            if ingredientInfo:
+                 try:
+                     ingredient["parent"]["protein"]
+                     categoryName = "protein." + ingredient["parent"]["protein"].keys()[0]
+                     newCategory = kb.categoryTransform(categoryName, transformType)
+                     if newCategory != categoryName:
+                         newIngredientInfo = kb.getIngredientsWithParent(newCategory)[0]
+                         ingredient.name = newIngredientInfo["name"]
+
+                 except KeyError:
+                     pass
+
+
 
 class Ingredient:
     def __init__(self,input_string):
-        string_tokens = nltk.wordpunct_tokenize(input_string)
+        global kb
+        string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
         self.descriptor = []
         if "(" in string_tokens:
             openIndex = string_tokens.index("(")
@@ -53,9 +90,43 @@ class Ingredient:
             string_tokens = string_tokens[:commaIndex]
             #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
 
-        self.ingredient = " ".join(string_tokens)
+        wholeName = " ".join(string_tokens)
+        if kb.searchIngredientsFor(wholeName):
+            self.name = wholeName
+        else:
+            mainindex = 0
+            secondindex = 1
+            foundMatch = False
+            nameSoFar = ""
+            while not foundMatch and mainindex < len(string_tokens):
+                while secondindex <= len(string_tokens):
 
-        print str(self.quant) + " " + str(self.unit) + str(string_tokens)
+                    tempresult = kb.searchIngredientsFor(
+                            " ".join(string_tokens[mainindex:secondindex]))
+
+                    if tempresult:
+                        nameSoFar = tempresult["name"]
+                        foundMatch = True
+                    elif foundMatch:
+                        break
+                    secondindex += 1
+
+                if foundMatch:
+                    break
+                mainindex += 1
+                secondindex = mainindex + 1
+
+            if nameSoFar == "":
+                print "Did not recognize an ingredient in string: " + wholeName
+                self.name = wholeName
+            else:
+                self.name = nameSoFar
+            string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
+            self.descriptor += string_tokens
+
+
+
+        print str(self.descriptor) + " " + str(self.name)
 
 def div_strings(first, second):
     return float(first)/float(second)
@@ -65,8 +136,9 @@ def autograder(url):
     parsed results in the correct format. See project sheet for
     details on correct format.'''
     # your code here
-
+    global kb
     url_to_strings(url)
+    # kb = KnowledgeBase()
 
     results = []
 
@@ -86,7 +158,12 @@ def url_to_strings(url):
     print strs_steps
     for string_in in strs_ingred:
         Ingredient(string_in)
-    return 
+    return
+
+
+
+
+
 
 def main():
     autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
