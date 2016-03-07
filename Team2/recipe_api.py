@@ -40,6 +40,55 @@ class Recipe:
                      pass
 
 
+    def diyTransformation(self, transformType):
+        if not (transformType == "toDIY"):
+            raise StandardError("Unrecognized transformation.")
+
+        global kb
+        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
+
+        for ingredient in newRecipe.ingredients:
+            try:
+                if ingredient["parent"]["protein"]["broth"]:
+                    recipeUrl = ingredient["parent"]["protein"]["broth"]["url"]
+                    parsedRecipe = url_to_strings[recipeUrl] #TODO: url_to_strings to return [ingredients, steps]
+                    addIng = parsedRecipe[0] 
+                    addSteps = parsedRecipe[1]
+                    newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
+                    newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add stock" shows up later, it's ok
+                    # need to do the same for tools once that's set up
+            except KeyError:
+                pass
+
+            #NOTE: repeating code for now to avoid dealing with KeyError problems
+             try:
+                if ingredient["parent"]["sauce"]:
+                    recipeUrl = ingredient["parent"]["sauce"]["url"]
+                    parsedRecipe = url_to_strings[recipeUrl] #TODO: url_to_strings to return [ingredients, steps]
+                    addIng = parsedRecipe[0] 
+                    addSteps = parsedRecipe[1]
+                    newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
+                    newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add sauce" shows up later, it's ok
+                    # need to do the same for tools once that's set up
+            except KeyError:
+                pass
+
+    def healthTransformation(self, transformType):
+        if not (transformType=="low-carb" or transformType=="low glycemic index"):
+            raise StandardError("Unrecognized transformation.")
+
+        #TODO once we know the API better
+
+        
+
+       
+
+        
+        
+
+
+
+
 
 class Ingredient:
     def __init__(self,input_string):
