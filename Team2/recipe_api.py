@@ -24,6 +24,7 @@ class Recipe:
         output_dict["cooking tools"] = []
         return output_dict
 
+
     def proteinTransform(self, transformType):
         if not(transformType == "vegetarian" or transformType == "pescatarian" or
                 transformType == "meatify"):
@@ -42,8 +43,10 @@ class Recipe:
                         newIngredientInfo = kb.getIngredientsWithParent(newCategory)[0]
                         ingredient.name = newIngredientInfo["name"]
                 except KeyError:
-                    pass
-
+                    pass #newRecipe.deleteIng(ingredient)
+                except AttributeError:
+                    pass #newRecipe.deleteIng(ingredient)
+        return newRecipe
 
     def diyTransformation(self, transformType):
         if not (transformType == "toDIY"):
@@ -77,6 +80,7 @@ class Recipe:
                     # need to do the same for tools once that's set up
             except KeyError:
                 pass
+        return newRecipe
 
     def healthTransformation(self, transformType):
         if not (transformType=="low-carb" or transformType=="low glycemic index"):
@@ -244,7 +248,8 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_out = r.convert_to_output()
+    r_trans = r.proteinTransform("vegetarian")
+    r_out = r_trans.convert_to_output()
     print_out(r_out,"")
 
     results = []
