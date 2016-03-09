@@ -16,9 +16,15 @@ class Recipe:
         self.ingredients = ingredients
         self.steps = steps
 
+    def convert_to_output(self):
+        output_dict = {}
+        output_dict["ingredients"] = [ing.convert_to_output() for ing in self.ingredients]
+        output_dict["primary cooking method"] = []#this.get_primary_method
+        output_dict["cooking methods"] = []#this.get_cooking_methods
+        output_dict["cooking tools"] = []
+        return output_dict
 
     def proteinTransform(self, transformType):
-
         if not(transformType == "vegetarian" or transformType == "pescatarian" or
                 transformType == "meatify"):
             raise StandardError("Unrecognized transformation.")
@@ -28,16 +34,15 @@ class Recipe:
         for ingredient in newRecipe.ingredients:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
-                 try:
-                     ingredient["parent"]["protein"]
-                     categoryName = "protein." + ingredient["parent"]["protein"].keys()[0]
-                     newCategory = kb.categoryTransform(categoryName, transformType)
-                     if newCategory != categoryName:
-                         newIngredientInfo = kb.getIngredientsWithParent(newCategory)[0]
-                         ingredient.name = newIngredientInfo["name"]
-
-                 except KeyError:
-                     pass
+                try:
+                    ingredient["parent"]["protein"]
+                    categoryName = "protein." + ingredient["parent"]["protein"].keys()[0]
+                    newCategory = kb.categoryTransform(categoryName, transformType)
+                    if newCategory != categoryName:
+                        newIngredientInfo = kb.getIngredientsWithParent(newCategory)[0]
+                        ingredient.name = newIngredientInfo["name"]
+                except KeyError:
+                    pass
 
 
     def diyTransformation(self, transformType):
@@ -51,7 +56,7 @@ class Recipe:
             try:
                 if ingredient["parent"]["protein"]["broth"]:
                     recipeUrl = ingredient["parent"]["protein"]["broth"]["url"]
-                    parsedRecipe = url_to_strings[recipeUrl] #TODO: url_to_strings to return [ingredients, steps]
+                    parsedRecipe = parse_url_to_class[recipeUrl] #TODO: parse_url_to_class to return [ingredients, steps]
                     addIng = parsedRecipe[0] 
                     addSteps = parsedRecipe[1]
                     newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
@@ -61,10 +66,10 @@ class Recipe:
                 pass
 
             #NOTE: repeating code for now to avoid dealing with KeyError problems
-             try:
+            try:
                 if ingredient["parent"]["sauce"]:
                     recipeUrl = ingredient["parent"]["sauce"]["url"]
-                    parsedRecipe = url_to_strings[recipeUrl] #TODO: url_to_strings to return [ingredients, steps]
+                    parsedRecipe = parse_url_to_class[recipeUrl] #TODO: parse_url_to_class to return [ingredients, steps]
                     addIng = parsedRecipe[0] 
                     addSteps = parsedRecipe[1]
                     newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
@@ -93,8 +98,11 @@ class Recipe:
 class Ingredient:
     def __init__(self,input_string):
         global kb
+
+        #tokenize 
         string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
         self.descriptor = []
+        #make parenthesized things descriptors
         if "(" in string_tokens:
             openIndex = string_tokens.index("(")
             closeIndex = string_tokens.index(")")
@@ -132,11 +140,32 @@ class Ingredient:
             else:
                 self.unit = None
 
-        self.preparation = []
+        self.preparation = [""]
         if "," in string_tokens:
             commaIndex = string_tokens.index(",")
-            self.preparation += " ".join(string_tokens[commaIndex+1:])
-            string_tokens = string_tokens[:commaIndex]
+            prepIndex = 0
+            for word in string_tokens[commaIndex+1:]:
+                if word == "and":
+                    self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
+                    self.preparation.append("")
+                    prepIndex += 1
+                    continue
+                else:
+                    self.preparation[prepIndex] += word+" "
+            self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
+        else:
+            self.preparation = None
+
+        self.prep_desc = None
+                # self.preparation += word + " "
+            # if len(string_tokens[commaIndex+1:]) > 1:
+            #     self.preparation += " ".join(string_tokens[commaIndex+1:])
+            #     print "Prep looks like: "+str(self.preparation)
+            #     string_tokens = string_tokens[:commaIndex]
+            # else:
+            #     self.preparation = string_tokens[commaIndex+1:]
+            #     string_tokens = string_tokens[:commaIndex]
+            #     print "Prep looks like: "+str(self.preparation)
             #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
 
         wholeName = " ".join(string_tokens)
@@ -173,12 +202,40 @@ class Ingredient:
             string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
             self.descriptor += string_tokens
 
+        # print str(self.descriptor) + " " + str(self.name)
 
-
-        print str(self.descriptor) + " " + str(self.name)
+    def convert_to_output(self):
+        # print "Processing " + self.name
+        output_dict = {}
+        output_dict["name"] = self.name
+        output_dict["quantity"] = str(self.quant)
+        output_dict["measurement"] = str(self.unit)
+        output_dict["descriptor"] = str(self.descriptor)
+        output_dict["preparation"] = str(self.preparation)
+        output_dict["prep-description"] = str(self.prep_desc)
+        return output_dict
 
 def div_strings(first, second):
     return float(first)/float(second)
+
+def print_out(obj,indent):
+    if type(obj) == dict:
+        for k, v in obj.items():
+            if hasattr(v, '__iter__'):
+                print k
+                print_out(v,indent+"    ")
+            elif k == "name":
+                print '%s : %s' % (k, v)
+            else:
+                print indent + '%s : %s' % (k, v)
+    elif type(obj) == list:
+        for v in obj:
+            if hasattr(v, '__iter__'):
+                print_out(v,indent+"    ")
+            else:
+                print indent + v
+    else:
+        print obj
 
 def autograder(url):
     '''Accepts the URL for a recipe, and returns a dictionary of the
@@ -186,14 +243,15 @@ def autograder(url):
     details on correct format.'''
     # your code here
     global kb
-    url_to_strings(url)
-    # kb = KnowledgeBase()
+    r = parse_url_to_class(url)
+    r_out = r.convert_to_output()
+    print_out(r_out,"")
 
     results = []
 
     return results
 
-def url_to_strings(url):
+def parse_url_to_class(url):
     # response = urllib2.urlopen(url)
     # html = response.read()
     # print html
@@ -204,14 +262,8 @@ def url_to_strings(url):
     strs_ingred = [raw.text for raw in raw_ingred]
     raw_steps = soup.find_all('span', 'recipe-directions__list--item')
     strs_steps = [raw.text for raw in raw_steps]
-    print strs_steps
-    for string_in in strs_ingred:
-        Ingredient(string_in)
-    return
-
-
-
-
+    parsed_recipe = Recipe([Ingredient(string_in) for string_in in strs_ingred], strs_steps)
+    return parsed_recipe
 
 
 def main():
