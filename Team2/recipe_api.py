@@ -37,17 +37,16 @@ class Recipe:
         for ingredient in newRecipe.ingredients:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
-                try:
-                    ingredient["parent"]["protein"]
-                    categoryName = "protein." + ingredient["parent"]["protein"].keys()[0]
-                    newCategory = kb.categoryTransform(categoryName, transformType)
-                    if newCategory != categoryName:
-                        newIngredientInfo = kb.getIngredientsWithParent(newCategory)[0]
-                        ingredient.name = newIngredientInfo["name"]
-                except KeyError:
-                    pass #newRecipe.deleteIng(ingredient)
-                except AttributeError:
-                    pass #newRecipe.deleteIng(ingredient)
+                categoryLineage = kb.getIngredientParentLineage(ingredientInfo)
+                newIngredients = None
+                if "protein" in categoryLineage:
+                    while len(categoryLineage) > 0 and not newIngredients:
+                        categoryName = categoryLineage[-1]
+                        newIngredients = kb.categoryTransform(categoryName, transformType)
+                        if newIngredients:
+                            ingredient.name = newIngredients[0]
+                        categoryLineage = categoryLineage[:-1]
+
         return newRecipe
 
     def diyTransformation(self, transformType):
@@ -85,8 +84,54 @@ class Recipe:
         return newRecipe
 
     def healthTransformation(self, transformType):
-        if not (transformType=="low-carb" or transformType=="low glycemic index"):
+        if not (transformType in ["to-low-carb", "from-low-carb", "to-low-sodium", "from-low-sodium"]):
             raise StandardError("Unrecognized transformation.")
+
+        field = ""
+        avoid = ""
+        if transformType == "to-low-carb":
+            field = "carbLevel"
+            avoid = "high"
+        elif transformType == "from-low-carb":
+            field = "carbLevel"
+            avoid = "low"
+        elif transformType == "to-low-sodium":
+            field = "sodiumLevel"
+            avoid = "high"
+        elif transformType == "to-high-sodium":
+            field = "sodiumLevel"
+            avoid = "low"
+
+        global kb
+        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
+
+        for ingredient in newRecipe.ingredients:
+            ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+            try:
+                if ingredientInfo[field] == avoid:
+                    lineage = kb.getIngredientParentLineage(ingredientInfo)
+                    newIngredient = self._searchForSimilarIngredient(field, avoid, lineage)
+                    if newIngredient:
+                        ingredient.name = newIngredient
+                    else:
+                        newRecipe.ingredients.remove(ingredient)
+            except KeyError:
+                print "Ingredient has no key for " + field
+
+        return newRecipe
+
+    def _searchForSimilarIngredient(self, field, avoid, lineage):
+        while len(lineage) > 1:
+            parentString = ".".join(lineage)
+            ingredientList = kb.getIngredientsWithParent(parentString)
+            for ingredient in ingredientList:
+                try:
+                    if ingredient[field] != avoid:
+                        return ingredient["name"]
+                except KeyError:
+                    print "Ingredient has no key for " + field
+            lineage = lineage[:-1]
+        return None
 
         #TODO once we know the API better
 
@@ -253,7 +298,7 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.proteinTransform("vegetarian")
+    r_trans = r.healthTransformation("to-low-sodium")
     r_out = r_trans.convert_to_output()
     print_out(r_out,"")
 

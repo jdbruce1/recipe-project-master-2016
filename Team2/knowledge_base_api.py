@@ -89,11 +89,31 @@ class KnowledgeBase:
                 transformation == "meatify"):
             raise StandardError("Unrecognized transformation.")
         self.setCurrentCollection("transforms")
-        response = self.queryOneDict({"$or" :
-                               [{"meatify": category},
-                                {"vegetarian": category},
-                                {"pescatarian": category}]})
-        return response[transformation]
+        response = self.queryOneDict({"transformationType": transformation})
+        try:
+            value = response["table"][category]
+            return value
+        except KeyError:
+            return None
+
+
+    def getIngredientParentLineage(self, ingredientResult):
+        lineageDict = ingredientResult["parent"]
+        lineage = []
+        #loop goes until category is no longer a dict
+        while True:
+            try:
+                category = lineageDict.keys()[0]
+                lineage.append(category)
+                lineageDict = lineageDict[category]
+            except AttributeError:
+                break
+        return lineage
+
+    def insertTransformationMapping(self, transformation, key, value):
+        self.setCurrentCollection("transforms")
+        self.collection.update_one({"transformationType":transformation},
+        {"$set": {"table." + key:value}})
 
 
 
@@ -266,7 +286,7 @@ def addOneIngredientUI(db):
     print "Category lineage: (Format: biggestCategory.smaller.*.smallest)"
     response = getInput()
     if response is not None:
-        data['parent.'+response] = True
+        data['parent.'+response + '.' + name] = True
     else:
         data['parent'] = None
     print "Default unit:"
@@ -275,6 +295,10 @@ def addOneIngredientUI(db):
     data['units per count'] = getInput()
     print "Decomposition information:"
     data['decomposition'] = getInput()
+    print "Carb Level? (high, neutral, low):"
+    data['carbLevel'] = getInput()
+    print "Sodium Level? (high, neutral, low):"
+    data['sodiumLevel'] = getInput()
     print "\nYou are about to create or update a record as follows:"
     printDict(data)
     print "Confirm? (Y to confirm, N to try again, B to go back)"
@@ -342,3 +366,18 @@ def kbmain():
 
 
 kbmain()
+# kb = KnowledgeBase()
+# kb.setCurrentCollection("transforms")
+# value = [{
+#         "transformationType":"meatify",
+#         "table": {"vegetarian": ["chicken"], "fish": ["pork"]}
+#      },
+#     {
+#         "transformationType":"vegetarian",
+#         "table": {"meat": ["tofu"], "fish": ["tofu"]}
+#     },
+#     {
+#         "transformationType":"pescatarian",
+#         "table": {"meat": ["salmon"], "vegetarian":["tuna"]}
+#     }]
+# kb.collection.insert(value)
