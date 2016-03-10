@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import copy
 import nltk
 from knowledge_base_api import KnowledgeBase
+# from nltk import tokenize
 
 kb = KnowledgeBase()
 
@@ -15,6 +16,7 @@ class Recipe:
     def __init__(self, ingredients, steps):
         self.ingredients = ingredients
         self.steps = steps
+        print self.steps
 
     def convert_to_output(self):
         output_dict = {}
@@ -92,10 +94,13 @@ class Recipe:
 
        
 
-        
-        
-
-
+class Step:
+    def __init__(self,input_string):
+        global kb
+        self.text = input_string
+        #print input_string
+        #string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
+        #self.action = string_tokens[0]
 
 
 
@@ -256,6 +261,17 @@ def autograder(url):
 
     return results
 
+# def parse_steps(step_strings):
+#     parsed_steps = []
+#     for og_step in step_strings:
+#         if len(og_step) == 0:
+#             continue
+#         sentences = nltk.sent_tokenize(og_step)
+#         for sentence in sentences:
+#             parsed_steps.append(Step(sentence))
+#     return parsed_steps
+
+
 def parse_url_to_class(url):
     # response = urllib2.urlopen(url)
     # html = response.read()
@@ -265,9 +281,11 @@ def parse_url_to_class(url):
     soup = BeautifulSoup(cont, "html.parser")
     raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
     strs_ingred = [raw.text for raw in raw_ingred]
+    parsed_ingred = [Ingredient(string_in) for string_in in strs_ingred]
     raw_steps = soup.find_all('span', 'recipe-directions__list--item')
     strs_steps = [raw.text for raw in raw_steps]
-    parsed_recipe = Recipe([Ingredient(string_in) for string_in in strs_ingred], strs_steps)
+    parsed_steps = [Step(og_step) for og_step in strs_steps]#parse_steps(strs_steps)
+    parsed_recipe = Recipe(parsed_ingred,parsed_steps)
     return parsed_recipe
 
 
