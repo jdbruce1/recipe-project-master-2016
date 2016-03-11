@@ -364,7 +364,8 @@ def kbmain():
     print "Exiting..."
     db.client.close()
 
-
+if __name__ == '__main__':
+    kbmain()
 #kbmain()
 # kb = KnowledgeBase()
 # kb.setCurrentCollection("transforms")
