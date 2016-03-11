@@ -328,6 +328,23 @@ class Ingredient:
         output_dict["prep-description"] = str(self.prep_desc)
         return output_dict
 
+    def print_ingredient(self):
+        ing_dict = self.convert_to_output()
+        ing_amount = ing_dict["quantity"] + " " + ing_dict["measurement"]
+        ing_descript = " " + ing_dict["descriptor"]
+        ing_name = " " + ing_dict["name"]
+        ing_prep = ", " + ing_dict["preparation"]
+
+        if ing_descript == []:
+            ing_string = ing_amount + ing_name
+        else:
+            ing_string = ing_amount + ing_descript + ing_name
+        if ing_prep != [""]:
+            ing_string += ing_prep
+
+        print ing_string
+        return
+
 def div_strings(first, second):
     return float(first)/float(second)
 
