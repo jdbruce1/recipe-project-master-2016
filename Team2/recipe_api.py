@@ -114,21 +114,25 @@ class Recipe:
             avoid = "low"
 
         global kb
-        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
-
-        for ingredient in newRecipe.ingredients:
+        new_ingredient_list = []
+        for ingredient in self.ingredients:
+            new_ingredient = copy.copy(ingredient)
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             try:
                 if ingredientInfo[field] == avoid:
                     lineage = kb.getIngredientParentLineage(ingredientInfo)
-                    newIngredient = self._searchForSimilarIngredient(field, avoid, lineage)
-                    if newIngredient:
-                        ingredient.name = newIngredient
+                    new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
+                    if new_ingredient_name:
+                        new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
                     else:
-                        newRecipe.ingredients.remove(ingredient)
+                        new_ingredient = None
             except KeyError:
                 print "Ingredient has no key for " + field
+            if new_ingredient:
+                new_ingredient_list.append(new_ingredient)
 
+
+        newRecipe = Recipe(new_ingredient_list, copy.copy(self.steps))
         return newRecipe
 
     def _searchForSimilarIngredient(self, field, avoid, lineage):
@@ -342,41 +346,47 @@ class Ingredient:
 
     def convert_to_new_ingred(self,new_name):
         global kb
+        print "Converting " + self.name + " to " + new_name
         # identify what kind of unit the current ingredient is
+        print "unit is " + self.unit
         unit_record = kb.getUnit(self.unit)
         unit_type = unit_record["type"]
+        print "unit type is " + unit_type
         # get the number of that unit
         old_amount = self.quant * unit_record["#default"]
+        print "old amount: " + str(old_amount)
         old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
         
         if unit_type == "volume":
-            old_count = old_amount / old_ingred_record["count_to_volume"]
+            old_count = old_amount / float(old_ingred_record["count_to_volume"])
         elif unit_type == "count":
             old_count = old_amount
-
+        print "old count: " + str(old_count)
         if unit_type != "mass":
-            mass = old_count * old_ingred_record["count_to_mass"]
+            mass = old_count * float(old_ingred_record["count_to_mass"])
         else:
             mass = old_amount
-
+        print "mass: " + str(mass)
         new_ingred_record = kb.searchIngredientsFor(new_name)
 
         default_unit = new_ingred_record["default unit"]
-
+        print "new default unit: " + default_unit
         if default_unit == "mass":
             quant = mass
             unit = "ounces"
         elif default_unit == "count":
-            quant = mass / new_ingred_record["count_to_mass"]
+            quant = mass / float(new_ingred_record["count_to_mass"])
             unit = "count"
         elif default_unit == "volume":
-            quant = (mass / new_ingred_record["count_to_mass"]) * new_ingred_record["count_to_volume"]
+            quant = (mass / float(new_ingred_record["count_to_mass"])) * float(new_ingred_record["count_to_volume"])
             unit = "cups"
         else:
             print "Something bad happened"
-
+        print "new quant " + str(quant)
+        print "new unit " + str(unit)
         newIngredient = Ingredient(new_name,quant,unit,self.descriptor,self.preparation,self.prep_desc)
+        return newIngredient
 
 
     def convert_to_output(self):
@@ -436,8 +446,8 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    #r_trans = r.healthTransformation("to-low-sodium")
-    r_out = r.convert_to_output()
+    r_trans = r.proteinTransform("vegetarian")
+    r_out = r_trans.convert_to_output()
     print_out(r_out,"")
 
     results = []
@@ -580,11 +590,11 @@ def interface():
 
 
 def main():
-    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-    autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
     interface()
 
 

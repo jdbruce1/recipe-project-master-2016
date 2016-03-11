@@ -231,6 +231,8 @@ def getInput():
         response = raw_input()
     except SyntaxError:
         return None
+    if response == "\n" or response == "":
+        response = None
     return response
 
 def ingredientUI(db):
@@ -293,8 +295,10 @@ def addOneIngredientUI(db):
         data['parent'] = None
     print "Default unit:"
     data['default unit'] = getInput()
-    print "1 count of this ingredient is how much default unit? (Quantity -> Volume)"
-    data['units per count'] = getInput()
+    print "1 count of this ingredient is how many cups? (Count -> Volume)"
+    data['count_to_volume'] = getInput()
+    print "1 count of this ingredient is how many ounces? (Count -> Mass)"
+    data['count_to_mass'] = getInput()
     print "Decomposition information:"
     data['decomposition'] = getInput()
     print "Carb Level? (high, neutral, low):"
