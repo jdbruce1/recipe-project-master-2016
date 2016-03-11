@@ -40,20 +40,26 @@ class Recipe:
                 transformType == "meatify"):
             raise StandardError("Unrecognized transformation.")
         global kb
-        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
+        
 
-        for ingredient in newRecipe.ingredients:
+        new_ingredient_list = []
+
+        for ingredient in self.ingredients:
+            new_ingredient = copy.copy(ingredient)
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
                 categoryLineage = kb.getIngredientParentLineage(ingredientInfo)
-                newIngredients = None
+                new_ingredient_names = None
                 if "protein" in categoryLineage:
-                    while len(categoryLineage) > 0 and not newIngredients:
+                    while len(categoryLineage) > 0 and not new_ingredient_names:
                         categoryName = categoryLineage[-1]
-                        newIngredients = kb.categoryTransform(categoryName, transformType)
-                        if newIngredients:
-                            ingredient.name = newIngredients[0]
+                        new_ingredient_names = kb.categoryTransform(categoryName, transformType)
+                        if new_ingredient_names:
+                            new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_names[0])
                         categoryLineage = categoryLineage[:-1]
+            
+            new_ingredient_list.append(new_ingredient)
+        newRecipe = Recipe(new_ingredient_list, copy.copy(self.steps))
         return newRecipe
 
     def diyTransformation(self, transformType):
@@ -210,124 +216,168 @@ def trim_and_join(str_tokens):
         str_tokens = str_tokens[:-1]
     return ' '.join(str_tokens)
 
+def parse_into_ingredient(input_string):
+    global kb
+
+    quant = None
+    unit = None
+    name = None
+
+    #tokenize 
+    string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
+    descriptor = []
+    #make parenthesized things descriptors
+    if "(" in string_tokens:
+        openIndex = string_tokens.index("(")
+        closeIndex = string_tokens.index(")")
+        inParens = string_tokens[openIndex+1:closeIndex]
+        descriptor += " ".join(inParens)
+        string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
+
+    if "/" in string_tokens:
+        tokens_processed = []
+        div_index = string_tokens.index("/")
+        quant = div_strings(string_tokens[div_index-1],string_tokens[div_index+1])
+        #print string_tokens
+        if div_index > 1:
+            quant += float(string_tokens[0])
+        #string_tokens = string_tokens[:(div_index-1)] + string_tokens[(div_index+2):]
+        string_tokens = string_tokens[(div_index+2):]
+        #print string_tokens
+        #print quant
+    else:
+        try:
+            quant = float(string_tokens[0])
+            string_tokens = string_tokens[1:]
+        except ValueError:
+            quant = None
+
+    unitRecord = kb.getUnit(string_tokens[0])
+    if unitRecord:
+        unit = unitRecord["name"]
+        string_tokens = string_tokens[1:]
+    else:
+        if quant:
+            unit = "count"
+        else:
+            unit = None
+
+    preparation = [""]
+    if "," in string_tokens:
+        commaIndex = string_tokens.index(",")
+        preparation = ' '.join(string_tokens[commaIndex+1:])
+        string_tokens = string_tokens[:commaIndex]
+    #     prepIndex = 0
+    #     for word in string_tokens[commaIndex+1:]:
+    #         if word == "and":
+    #             preparation[prepIndex] = preparation[prepIndex][:-1]
+    #             preparation.append("")
+    #             prepIndex += 1
+    #             continue
+    #         else:
+    #             preparation[prepIndex] += word+" "
+    #     preparation[prepIndex] = preparation[prepIndex][:-1]
+    # else:
+    #     preparation = None
+
+    prep_desc = None
+            # preparation += word + " "
+        # if len(string_tokens[commaIndex+1:]) > 1:
+        #     preparation += " ".join(string_tokens[commaIndex+1:])
+        #     print "Prep looks like: "+str(preparation)
+        #     string_tokens = string_tokens[:commaIndex]
+        # else:
+        #     preparation = string_tokens[commaIndex+1:]
+        #     string_tokens = string_tokens[:commaIndex]
+        #     print "Prep looks like: "+str(preparation)
+        #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
+
+    wholeName = " ".join(string_tokens)
+    if kb.searchIngredientsFor(wholeName):
+        name = wholeName
+    else:
+        mainindex = 0
+        secondindex = 1
+        foundMatch = False
+        nameSoFar = ""
+        while not foundMatch and mainindex < len(string_tokens):
+            while secondindex <= len(string_tokens):
+
+                tempresult = kb.searchIngredientsFor(
+                        " ".join(string_tokens[mainindex:secondindex]))
+
+                if tempresult:
+                    nameSoFar = tempresult["name"]
+                    foundMatch = True
+                elif foundMatch:
+                    break
+                secondindex += 1
+
+            if foundMatch:
+                break
+            mainindex += 1
+            secondindex = mainindex + 1
+
+        if nameSoFar == "":
+            print "Did not recognize an ingredient in string: " + wholeName
+            name = wholeName
+        else:
+            name = nameSoFar
+        string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
+        descriptor += string_tokens
+
+    return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
+
+    # print str(descriptor) + " " + str(name)
+
 
 class Ingredient:
-    def __init__(self,input_string):
-        global kb
-
-        #tokenize 
-        string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
-        self.descriptor = []
-        #make parenthesized things descriptors
-        if "(" in string_tokens:
-            openIndex = string_tokens.index("(")
-            closeIndex = string_tokens.index(")")
-            inParens = string_tokens[openIndex+1:closeIndex]
-            self.descriptor += " ".join(inParens)
-            string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
-
-        if "/" in string_tokens:
-            tokens_processed = []
-            div_index = string_tokens.index("/")
-            self.quant = div_strings(string_tokens[div_index-1],string_tokens[div_index+1])
-            #print string_tokens
-            if div_index > 1:
-                self.quant += float(string_tokens[0])
-            #string_tokens = string_tokens[:(div_index-1)] + string_tokens[(div_index+2):]
-            string_tokens = string_tokens[(div_index+2):]
-            #print string_tokens
-            #print self.quant
-        else:
-            try:
-                self.quant = float(string_tokens[0])
-                string_tokens = string_tokens[1:]
-            except ValueError:
-                self.quant = None
-
-
-        unitList = ["tablespoon", "tablespoons", "teaspoons", "teaspoon", "cup", "cups", "pound", "pounds", "ounce", "ounces", "can", "cans","package", "packages", "jar", "jars"]
-        #NOTE: the unit list will eventually be stored in the DB, right?
-        if string_tokens[0] in unitList:
-            self.unit = string_tokens[0]
-            string_tokens = string_tokens[1:]
-        else:
-            if self.quant:
-                self.unit = "count"
-            else:
-                self.unit = None
-
-        self.preparation = [""]
-        if "," in string_tokens:
-            commaIndex = string_tokens.index(",")
-            self.preparation = ' '.join(string_tokens[commaIndex+1:])
-            string_tokens = string_tokens[:commaIndex]
-        #     prepIndex = 0
-        #     for word in string_tokens[commaIndex+1:]:
-        #         if word == "and":
-        #             self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
-        #             self.preparation.append("")
-        #             prepIndex += 1
-        #             continue
-        #         else:
-        #             self.preparation[prepIndex] += word+" "
-        #     self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
-        # else:
-        #     self.preparation = None
-
-        self.prep_desc = None
-                # self.preparation += word + " "
-            # if len(string_tokens[commaIndex+1:]) > 1:
-            #     self.preparation += " ".join(string_tokens[commaIndex+1:])
-            #     print "Prep looks like: "+str(self.preparation)
-            #     string_tokens = string_tokens[:commaIndex]
-            # else:
-            #     self.preparation = string_tokens[commaIndex+1:]
-            #     string_tokens = string_tokens[:commaIndex]
-            #     print "Prep looks like: "+str(self.preparation)
-            #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
-
-        wholeName = " ".join(string_tokens)
-        if kb.searchIngredientsFor(wholeName):
-            self.name = wholeName
-        else:
-            mainindex = 0
-            secondindex = 1
-            foundMatch = False
-            nameSoFar = ""
-            while not foundMatch and mainindex < len(string_tokens):
-                while secondindex <= len(string_tokens):
-
-                    tempresult = kb.searchIngredientsFor(
-                            " ".join(string_tokens[mainindex:secondindex]))
-
-                    if tempresult:
-                        nameSoFar = tempresult["name"]
-                        foundMatch = True
-                    elif foundMatch:
-                        break
-                    secondindex += 1
-
-                if foundMatch:
-                    break
-                mainindex += 1
-                secondindex = mainindex + 1
-
-            if nameSoFar == "":
-                print "Did not recognize an ingredient in string: " + wholeName
-                self.name = wholeName
-            else:
-                self.name = nameSoFar
-            string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
-            self.descriptor += string_tokens
-
-        # print str(self.descriptor) + " " + str(self.name)
+    def __init__(self, name, quant, unit, desc, prep, prep_desc):
+        self.name = name
+        self.quant = quant
+        self.unit = unit
+        self.descriptor = desc
+        self.preparation = prep
+        self.prep_desc = prep_desc
 
     def convert_to_new_ingred(self,new_name):
-
+        global kb
         # identify what kind of unit the current ingredient is
+        unit_record = kb.getUnit(self.unit)
+        unit_type = unit_record["type"]
         # get the number of that unit
-        # figure out how many counts that is of the new ingredients
-        # return the new ingredient in its default unit
+        old_amount = self.quant * unit_record["#default"]
+        old_count = 0
+        old_ingred_record = kb.searchIngredientsFor(self.name)
+        
+        if unit_type == "volume":
+            old_count = old_amount / old_ingred_record["count_to_volume"]
+        elif unit_type == "count":
+            old_count = old_amount
+
+        if unit_type != "mass":
+            mass = old_count * old_ingred_record["count_to_mass"]
+        else:
+            mass = old_amount
+
+        new_ingred_record = kb.searchIngredientsFor(new_name)
+
+        default_unit = new_ingred_record["default unit"]
+
+        if default_unit == "mass":
+            quant = mass
+            unit = "ounces"
+        elif default_unit == "count":
+            quant = mass / new_ingred_record["count_to_mass"]
+            unit = "count"
+        elif default_unit == "volume":
+            quant = (mass / new_ingred_record["count_to_mass"]) * new_ingred_record["count_to_volume"]
+            unit = "cups"
+        else:
+            print "Something bad happened"
+
+        newIngredient = Ingredient(new_name,quant,unit,self.descriptor,self.preparation,self.prep_desc)
+
 
     def convert_to_output(self):
         # print "Processing " + self.name
@@ -422,7 +472,7 @@ def parse_url_to_class(url):
         soup = BeautifulSoup(cont, "html.parser")
         raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
         strs_ingred = [raw.text for raw in raw_ingred]
-        parsed_ingred = [Ingredient(string_in) for string_in in strs_ingred]
+        parsed_ingred = [parse_into_ingredient(string_in) for string_in in strs_ingred]
         raw_steps = soup.find_all('span', 'recipe-directions__list--item')
         strs_steps = [raw.text for raw in raw_steps]
         parsed_steps = parse_steps(strs_steps,parsed_ingred)
