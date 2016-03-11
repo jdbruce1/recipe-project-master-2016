@@ -144,13 +144,13 @@ class Recipe:
         #TODO once we know the API better
 
         
-prep_actions = ['preheat','transfer','place','pour','stir','add','mix']
-cook_actions = ['heat','cook','bake']
-post_actions = ['serve']
+prep_actions = ['whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast']
+post_actions = ['remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet','baking dish',]
-prep_tools = ['knife']
+cooking_tools = ['oven','skillet']
+prep_tools = ['knife','cup','bowl','dish']
 all_tools = cooking_tools+prep_tools
 
 class Step:
@@ -173,7 +173,9 @@ class Step:
                 self.action_type = 'post'
             index += 1
         if not self.action:
-            print "Action unidentified, please add to action list"
+            self.action_type = None
+            print "Action unidentified in " + self.text
+            self.action = 'unknown'
 
         string_tokens = string_tokens[index:]
 
@@ -187,12 +189,29 @@ class Step:
             if tool in self.text:
                 self.tools.append(tool)
 
+    def split_up(self):
+        text_index = 0
+        string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(self.text)]
+        while text_index < len(string_tokens):
+            word = string_tokens[text_index]
+            if word in all_actions and word != self.action:
+                newBeforeStep = Step(trim_and_join(string_tokens[:text_index]), self.ingredients)
+                newAfterStep = Step(trim_and_join(string_tokens[text_index:]), self.ingredients)
+                return [newBeforeStep, newAfterStep]
+            text_index += 1
+        return [self]
+
+
     def print_step(self):
-        print "Text: "+self.text
+        print "\nText: "+self.text
         print "Action: "+self.action
         print "Ingredients: "+", ".join([i.name for i in self.ingredients])
         print "Tools: "+ str(self.tools)
 
+def trim_and_join(str_tokens):
+    while str_tokens[-1] == 'and' or str_tokens[-1] == ',':
+        str_tokens = str_tokens[:-1]
+    return ' '.join(str_tokens)
 
 
 class Ingredient:
@@ -243,18 +262,20 @@ class Ingredient:
         self.preparation = [""]
         if "," in string_tokens:
             commaIndex = string_tokens.index(",")
-            prepIndex = 0
-            for word in string_tokens[commaIndex+1:]:
-                if word == "and":
-                    self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
-                    self.preparation.append("")
-                    prepIndex += 1
-                    continue
-                else:
-                    self.preparation[prepIndex] += word+" "
-            self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
-        else:
-            self.preparation = None
+            self.preparation = ' '.join(string_tokens[commaIndex+1:])
+            string_tokens = string_tokens[:commaIndex]
+        #     prepIndex = 0
+        #     for word in string_tokens[commaIndex+1:]:
+        #         if word == "and":
+        #             self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
+        #             self.preparation.append("")
+        #             prepIndex += 1
+        #             continue
+        #         else:
+        #             self.preparation[prepIndex] += word+" "
+        #     self.preparation[prepIndex] = self.preparation[prepIndex][:-1]
+        # else:
+        #     self.preparation = None
 
         self.prep_desc = None
                 # self.preparation += word + " "
@@ -354,6 +375,7 @@ def autograder(url):
 
 def parse_steps(step_strings,ingredient_list):
     # tokenizer = nltk.data.load('tokenizers/punkt/english/pickle')
+    # print step_strings
     parsed_steps = []
     for og_step in step_strings:
         if len(og_step) == 0:
@@ -361,7 +383,12 @@ def parse_steps(step_strings,ingredient_list):
         sentences = sent_tokenize(og_step)#tokenizer.tokenize(og_step)
         for sentence in sentences:
             parsed_steps.append(Step(sentence,ingredient_list))
-    return parsed_steps
+    split_steps = []
+    for step in parsed_steps:
+        split_steps += step.split_up()
+    print split_steps
+
+    return split_steps
 
 
 def parse_url_to_class(url):
@@ -382,10 +409,10 @@ def parse_url_to_class(url):
 
 
 def main():
-    autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
 main()
 
