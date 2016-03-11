@@ -453,10 +453,12 @@ def interface():
             print_out(recipe, " ")
         elif func == "2":
             print "\nGetting ingredient list:"
-            recipe.printIngredients() #TODO: printIngredients in Recipe
+            for ing in recipe.ingredients:
+                ing.print_ingredient()
         elif func == "3":
             print "\nGetting recipe steps:"
-            recipe.printSteps() #TODO: printSteps in Recipe
+            for step in recipe.steps:
+                step.print_step()
         elif func == "4":
             while True:
                 print "\nWhich transformation would you like to do?"
@@ -479,44 +481,43 @@ def interface():
                 while transformType not in tchoices:
                     transformType = raw_input("Please enter a number 1-12: ")
 
+                newRecipe = 0
+                if transformType == "1":
+                    newRecipe = recipe.proteinTransform("vegetarian")
+                elif transformType == "2" or transformType == "4":
+                    newRecipe = recipe.proteinTransform("meatify")
+                elif transformType == "3":
+                    newRecipe = recipe.proteinTransform("pescatarian")
+                elif transformType == "5":
+                    newRecipe = recipe.diyTransformation("toDIY")
+                elif transformType == "6":
+                    newRecipe = recipe.healthTransformation("to-low-carb")
+                elif transformType == "7":
+                    newRecipe = recipe.healthTransformation("from-low-carb")
+                elif transformType == "8":
+                    newRecipe = recipe.healthTransformation("to-low-sodium")
+                elif transformType == "9":
+                    newRecipe = recipe.healthTransformation("from-low-sodium")
+                elif transformType =="10":
+                    newRecipe = recipe.healthTransformation("to-low-gi")
+                elif transformType == "11":
+                    newRecipe = recipe.healthTransformation("from-low-gi")
+                else:
+                    break
 
+                print "Your transformed recipe is: "
+                print_out(newRecipe, " ") 
+
+                break 
+
+        elif func == "5":
+            recipe = False
+
+        elif func == "6":
+            break
     
 
-        result = 0
-        if func == "1":
-            print "\nGetting award names"
-            result = get_awards(year)
-        elif func == "2":
-            print "\nGetting nominees"
-            result = get_nominees(year)
-        elif func == "3":
-            print "\nGetting winners"
-            print_winners(get_winner(year))
-        elif func == "4":
-            print "\nGetting hosts"
-            result = get_hosts(year)
-        elif func == "5":
-            print "\nGetting presenters"
-            result = get_presenters(year)
-        elif func == "6":
-            print "\nGetting red carpet results"
-            best, worst, discuss = best_dressed(year)
-            print "Best dressed: " + best
-            print "Worst dressed: " + worst
-            print "Most discussed: " + discuss
-        elif func == "7":
-            year = get_year()
-        elif func == "8":
-            break
-
-
-        if result != 0:
-            if isinstance(result, dict):
-                print_dict(result)
-            elif isinstance(result, list):
-                print_list(result)
-
-        print "\n"
+       
 
     return
 
