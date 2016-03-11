@@ -365,7 +365,7 @@ def kbmain():
     db.client.close()
 
 
-kbmain()
+#kbmain()
 # kb = KnowledgeBase()
 # kb.setCurrentCollection("transforms")
 # value = [{

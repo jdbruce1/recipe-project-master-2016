@@ -5,8 +5,9 @@ import requests
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
 import copy
-import nltk
+import nltk.data
 from knowledge_base_api import KnowledgeBase
+from nltk.tokenize import sent_tokenize
 # from nltk import tokenize
 
 kb = KnowledgeBase()
@@ -16,14 +17,21 @@ class Recipe:
     def __init__(self, ingredients, steps):
         self.ingredients = ingredients
         self.steps = steps
-        print self.steps
+        self.cooking_methods = []
+        self.tools = []
+        for step in steps:
+            self.tools.append(step.tools)
+            if step.action_type == 'cook':
+                self.cooking_methods.append(step.action)
+            step.print_step()
+        self.primary_method = self.cooking_methods[-1]
 
     def convert_to_output(self):
         output_dict = {}
         output_dict["ingredients"] = [ing.convert_to_output() for ing in self.ingredients]
-        output_dict["primary cooking method"] = []#this.get_primary_method
-        output_dict["cooking methods"] = []#this.get_cooking_methods
-        output_dict["cooking tools"] = []
+        output_dict["primary cooking method"] = self.primary_method
+        output_dict["cooking methods"] = self.cooking_methods
+        output_dict["cooking tools"] = self.tools
         return output_dict
 
 
@@ -136,16 +144,54 @@ class Recipe:
         #TODO once we know the API better
 
         
+prep_actions = ['preheat','transfer','place','pour','stir','add','mix']
+cook_actions = ['heat','cook','bake']
+post_actions = ['serve']
+all_actions = prep_actions+cook_actions+post_actions
 
-       
+cooking_tools = ['oven','skillet','baking dish',]
+prep_tools = ['knife']
+all_tools = cooking_tools+prep_tools
 
 class Step:
-    def __init__(self,input_string):
+    def __init__(self,input_string,ingredient_list):
         global kb
         self.text = input_string
-        #print input_string
-        #string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
-        #self.action = string_tokens[0]
+        string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
+        
+        self.action = None
+        index = 0
+        while not self.action and index < len(string_tokens):
+            if string_tokens[index] in prep_actions:
+                self.action = string_tokens[index]
+                self.action_type = 'prep'
+            elif string_tokens[index] in cook_actions:
+                self.action = string_tokens[index]
+                self.action_type = 'cook'
+            elif string_tokens[index] in post_actions:
+                self.action = string_tokens[index]
+                self.action_type = 'post'
+            index += 1
+        if not self.action:
+            print "Action unidentified, please add to action list"
+
+        string_tokens = string_tokens[index:]
+
+        self.ingredients = []
+        for ingredient in ingredient_list:
+            if set(string_tokens) & set(nltk.wordpunct_tokenize(ingredient.name)):
+                self.ingredients.append(ingredient)
+
+        self.tools = []
+        for tool in all_tools:
+            if tool in self.text:
+                self.tools.append(tool)
+
+    def print_step(self):
+        print "Text: "+self.text
+        print "Action: "+self.action
+        print "Ingredients: "+", ".join([i.name for i in self.ingredients])
+        print "Tools: "+ str(self.tools)
 
 
 
@@ -298,23 +344,24 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.healthTransformation("to-low-sodium")
-    r_out = r_trans.convert_to_output()
+    #r_trans = r.healthTransformation("to-low-sodium")
+    r_out = r.convert_to_output()
     print_out(r_out,"")
 
     results = []
 
     return results
 
-# def parse_steps(step_strings):
-#     parsed_steps = []
-#     for og_step in step_strings:
-#         if len(og_step) == 0:
-#             continue
-#         sentences = nltk.sent_tokenize(og_step)
-#         for sentence in sentences:
-#             parsed_steps.append(Step(sentence))
-#     return parsed_steps
+def parse_steps(step_strings,ingredient_list):
+    # tokenizer = nltk.data.load('tokenizers/punkt/english/pickle')
+    parsed_steps = []
+    for og_step in step_strings:
+        if len(og_step) == 0:
+            continue
+        sentences = sent_tokenize(og_step)#tokenizer.tokenize(og_step)
+        for sentence in sentences:
+            parsed_steps.append(Step(sentence,ingredient_list))
+    return parsed_steps
 
 
 def parse_url_to_class(url):
@@ -329,7 +376,7 @@ def parse_url_to_class(url):
     parsed_ingred = [Ingredient(string_in) for string_in in strs_ingred]
     raw_steps = soup.find_all('span', 'recipe-directions__list--item')
     strs_steps = [raw.text for raw in raw_steps]
-    parsed_steps = [Step(og_step) for og_step in strs_steps]#parse_steps(strs_steps)
+    parsed_steps = parse_steps(strs_steps,parsed_ingred)
     parsed_recipe = Recipe(parsed_ingred,parsed_steps)
     return parsed_recipe
 
