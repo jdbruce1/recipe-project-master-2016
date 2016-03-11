@@ -322,6 +322,13 @@ class Ingredient:
 
         # print str(self.descriptor) + " " + str(self.name)
 
+    def convert_to_new_ingred(self,new_name):
+
+        # identify what kind of unit the current ingredient is
+        # get the number of that unit
+        # figure out how many counts that is of the new ingredients
+        # return the new ingredient in its default unit
+
     def convert_to_output(self):
         # print "Processing " + self.name
         output_dict = {}
