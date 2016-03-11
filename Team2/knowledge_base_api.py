@@ -115,19 +115,13 @@ class KnowledgeBase:
         self.collection.update_one({"transformationType":transformation},
         {"$set": {"table." + key:value}})
 
-    def getUnit(self, unitName):
-        self.setCurrentCollection("units")
-        return self.queryOneDict({"$or": [{"alt_names": unitName}, {"name": unitName}]})
-
-
-
-
 
 
 
 # The following methods are used to make a UI to easily add to the database.
 
     #db.authenticate('team2recipes', 'recipes')
+
 
 
 
@@ -371,9 +365,42 @@ def kbmain():
     db.client.close()
 
 if __name__ == '__main__':
-    kb = KnowledgeBase()
-    print kb.getUnit("teaspoon")
-    #kbmain()
+    kbmain()
+
+# kb = KnowledgeBase()
+# kb.setCurrentCollection("units")
+# value = [{
+#         "name": "tablespoons",
+#         "alt_names": ["tablespoon","T","Tbs.","Tbs","Tbsp","Tbsp.","tbs.","tbs","tbsp","tbsp."],
+#         "type": "volume",
+#         "#default": .0625
+#      },
+#      {
+#         "name": "cups",
+#         "alt_names": ["cup"],
+#         "type": "volume",
+#         "#default": 1
+#      },
+#      {
+#         "name": "teaspoons",
+#         "alt_names": ["teaspoon","t","tsp.","tsp"],
+#         "type": "volume",
+#         "#default": .020833
+#      },
+#      {
+#         "name": "ounces",
+#         "alt_names": ["ounce","oz","oz.","Oz","Oz."],
+#         "type": "mass",
+#         "#default": 1
+#      },
+#      {
+#         "name": "pounds",
+#         "alt_names": ["lb","lb.","lbs","lbs."],
+#         "type": "volume",
+#         "#default": 16
+#      }]
+# kb.collection.insert(value)
+
 #kbmain()
 # kb = KnowledgeBase()
 # kb.setCurrentCollection("transforms")
