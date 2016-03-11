@@ -115,7 +115,9 @@ class KnowledgeBase:
         self.collection.update_one({"transformationType":transformation},
         {"$set": {"table." + key:value}})
 
-
+    def getUnit(self, unitName):
+        self.setCurrentCollection("units")
+        return self.queryOneDict({"$or": [{"alt_names": unitName}, {"name": unitName}]})
 
 
 # The following methods are used to make a UI to easily add to the database.
