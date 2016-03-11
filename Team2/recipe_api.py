@@ -54,7 +54,6 @@ class Recipe:
                         if newIngredients:
                             ingredient.name = newIngredients[0]
                         categoryLineage = categoryLineage[:-1]
-
         return newRecipe
 
     def diyTransformation(self, transformType):
@@ -64,31 +63,24 @@ class Recipe:
         global kb
         newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
 
+
         for ingredient in newRecipe.ingredients:
-            try:
-                if ingredient["parent"]["protein"]["broth"]:
-                    recipeUrl = ingredient["parent"]["protein"]["broth"]["url"]
+            ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+            if ingredientInfo:
+                categoryLineage = kb.categoryLineage(ingredientInfo)
+                diyType = "broth" if ("broth" in categoryLineage) else "sauce" if ("sauce" in categoryLineage) else False
+
+                if diyType:
+                  recipeUrl = ingredient["parent"]["protein"][diyType]["url"]
                     parsedRecipe = parse_url_to_class[recipeUrl] #TODO: parse_url_to_class to return [ingredients, steps]
                     addIng = parsedRecipe[0] 
                     addSteps = parsedRecipe[1]
                     newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
                     newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add stock" shows up later, it's ok
-                    # need to do the same for tools once that's set up
+                      
             except KeyError:
                 pass
 
-            #NOTE: repeating code for now to avoid dealing with KeyError problems
-            try:
-                if ingredient["parent"]["sauce"]:
-                    recipeUrl = ingredient["parent"]["sauce"]["url"]
-                    parsedRecipe = parse_url_to_class[recipeUrl] #TODO: parse_url_to_class to return [ingredients, steps]
-                    addIng = parsedRecipe[0] 
-                    addSteps = parsedRecipe[1]
-                    newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
-                    newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add sauce" shows up later, it's ok
-                    # need to do the same for tools once that's set up
-            except KeyError:
-                pass
         return newRecipe
 
     def healthTransformation(self, transformType):
