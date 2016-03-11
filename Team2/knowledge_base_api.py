@@ -115,13 +115,19 @@ class KnowledgeBase:
         self.collection.update_one({"transformationType":transformation},
         {"$set": {"table." + key:value}})
 
+    def getUnit(self, unitName):
+        self.setCurrentCollection("units")
+        return self.queryOneDict({"$or": [{"alt_names": unitName}, {"name": unitName}]})
+
+
+
+
 
 
 
 # The following methods are used to make a UI to easily add to the database.
 
     #db.authenticate('team2recipes', 'recipes')
-
 
 
 
@@ -365,7 +371,9 @@ def kbmain():
     db.client.close()
 
 if __name__ == '__main__':
-    kbmain()
+    kb = KnowledgeBase()
+    print kb.getUnit("teaspoon")
+    #kbmain()
 #kbmain()
 # kb = KnowledgeBase()
 # kb.setCurrentCollection("transforms")
