@@ -68,23 +68,22 @@ class Recipe:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
                 categoryLineage = kb.categoryLineage(ingredientInfo)
-                diyType = "broth" if ("broth" in categoryLineage) else "sauce" if ("sauce" in categoryLineage) else False
 
-                if diyType:
-                  recipeUrl = ingredient["parent"]["protein"][diyType]["url"]
-                    parsedRecipe = parse_url_to_class[recipeUrl] #TODO: parse_url_to_class to return [ingredients, steps]
-                    addIng = parsedRecipe[0] 
-                    addSteps = parsedRecipe[1]
+                if ("broth" in categoryLineage) or ("sauce" in categoryLineage):
+                    recipeUrl = ingredientInfo["decomposition"]
+                    parsedRecipe = parse_url_to_class(recipeUrl)
+                    addIng = parsedRecipe.ingredients
+                    addSteps = parsedRecipe.steps
                     newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
                     newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add stock" shows up later, it's ok
                       
-            except KeyError:
-                pass
+            #except KeyError:
+             #   pass
 
         return newRecipe
 
     def healthTransformation(self, transformType):
-        if not (transformType in ["to-low-carb", "from-low-carb", "to-low-sodium", "from-low-sodium"]):
+        if not (transformType in ["to-low-carb", "from-low-carb", "to-low-sodium", "from-low-sodium", "to-low-gi", "from-low-gi"]):
             raise StandardError("Unrecognized transformation.")
 
         field = ""
@@ -98,8 +97,14 @@ class Recipe:
         elif transformType == "to-low-sodium":
             field = "sodiumLevel"
             avoid = "high"
-        elif transformType == "to-high-sodium":
+        elif transformType == "from-low-sodium":
             field = "sodiumLevel"
+            avoid = "low"
+        elif transformType == "to-low-gi":
+            field = "glycemicIndex"
+            avoid = "high"
+        elif transformType == "from-low-gi":
+            field = "glycemicIndex"
             avoid = "low"
 
         global kb
@@ -387,17 +392,116 @@ def parse_url_to_class(url):
     # response = urllib2.urlopen(url)
     # html = response.read()
     # print html
-    r = requests.get(url)
-    cont = r.content
-    soup = BeautifulSoup(cont, "html.parser")
-    raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
-    strs_ingred = [raw.text for raw in raw_ingred]
-    parsed_ingred = [Ingredient(string_in) for string_in in strs_ingred]
-    raw_steps = soup.find_all('span', 'recipe-directions__list--item')
-    strs_steps = [raw.text for raw in raw_steps]
-    parsed_steps = parse_steps(strs_steps,parsed_ingred)
-    parsed_recipe = Recipe(parsed_ingred,parsed_steps)
+    try:
+        r = requests.get(url)
+        cont = r.content
+        soup = BeautifulSoup(cont, "html.parser")
+        raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
+        strs_ingred = [raw.text for raw in raw_ingred]
+        parsed_ingred = [Ingredient(string_in) for string_in in strs_ingred]
+        raw_steps = soup.find_all('span', 'recipe-directions__list--item')
+        strs_steps = [raw.text for raw in raw_steps]
+        parsed_steps = parse_steps(strs_steps,parsed_ingred)
+        parsed_recipe = Recipe(parsed_ingred,parsed_steps)
+    except Exception:
+        parsed_recipe = False
     return parsed_recipe
+
+def interface():
+    print "Welcome to the Recipe API"
+
+    recipe = False
+    while True:
+
+        while not recipe:
+            url = raw_input("Please enter a recipe url from AllRecipes.com: ")
+            recipe = parse_url_to_class(url)
+
+        print "Got it. What would you like to do?\n"
+        print "1: View recipe"
+        print "2: View ingredients"
+        print "3: View steps"
+        print "4: Transform recipe"
+        print "5: Choose a different recipe"
+        print "6: Quit"
+
+        choices = ["1","2","3","4","5","6"]
+
+        func = raw_input("\n")
+        while func not in choices:
+            func = raw_input("Please enter a number 1-6: ")
+
+        if func == "1":
+            print "\nPrinting your recipe:"
+            print_out(recipe, " ")
+        elif func == "2":
+            print "\nGetting ingredient list:"
+            recipe.printIngredients() #TODO: printIngredients in Recipe
+        elif func == "3":
+            print "\nGetting recipe steps:"
+            recipe.printSteps() #TODO: printSteps in Recipe
+        elif func == "4":
+            while True:
+                print "\nWhich transformation would you like to do?"
+                print "1: Transform to vegetarian"
+                print "2: Transform from vegetarian"
+                print "3: Transform to pescatarian"
+                print "4: Transform from pescatarian"
+                print "5: Transform to DIY"
+                print "6: Transform to low carb"
+                print "7: Transform from low carb"
+                print "8: Transform to low sodium"
+                print "9: Transform from low sodium"
+                print "10: Transform to low glycemic index"
+                print "11: Transform from low glycemic index"
+                print "12: Go back"
+
+                transformType = raw_input("\n")
+
+                tchoices = ["1","2","3","4","5","6","7","8","9","10","11","12"]
+                while transformType not in tchoices:
+                    transformType = raw_input("Please enter a number 1-12: ")
+
+
+    
+
+        result = 0
+        if func == "1":
+            print "\nGetting award names"
+            result = get_awards(year)
+        elif func == "2":
+            print "\nGetting nominees"
+            result = get_nominees(year)
+        elif func == "3":
+            print "\nGetting winners"
+            print_winners(get_winner(year))
+        elif func == "4":
+            print "\nGetting hosts"
+            result = get_hosts(year)
+        elif func == "5":
+            print "\nGetting presenters"
+            result = get_presenters(year)
+        elif func == "6":
+            print "\nGetting red carpet results"
+            best, worst, discuss = best_dressed(year)
+            print "Best dressed: " + best
+            print "Worst dressed: " + worst
+            print "Most discussed: " + discuss
+        elif func == "7":
+            year = get_year()
+        elif func == "8":
+            break
+
+
+        if result != 0:
+            if isinstance(result, dict):
+                print_dict(result)
+            elif isinstance(result, list):
+                print_list(result)
+
+        print "\n"
+
+    return
 
 
 def main():
@@ -406,5 +510,10 @@ def main():
     #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
     autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
-main()
+    interface()
+
+
+if __name__ == '__main__':
+    main()
+
 
