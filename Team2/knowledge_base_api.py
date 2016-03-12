@@ -375,53 +375,7 @@ def kbmain():
 if __name__ == '__main__':
     kbmain()
 
-# kb = KnowledgeBase()
-# kb.setCurrentCollection("units")
-# value = [{
-#         "name": "tablespoons",
-#         "alt_names": ["tablespoon","T","Tbs.","Tbs","Tbsp","Tbsp.","tbs.","tbs","tbsp","tbsp."],
-#         "type": "volume",
-#         "#default": .0625
-#      },
-#      {
-#         "name": "cups",
-#         "alt_names": ["cup"],
-#         "type": "volume",
-#         "#default": 1
-#      },
-#      {
-#         "name": "teaspoons",
-#         "alt_names": ["teaspoon","t","tsp.","tsp"],
-#         "type": "volume",
-#         "#default": .020833
-#      },
-#      {
-#         "name": "ounces",
-#         "alt_names": ["ounce","oz","oz.","Oz","Oz."],
-#         "type": "mass",
-#         "#default": 1
-#      },
-#      {
-#         "name": "pounds",
-#         "alt_names": ["lb","lb.","lbs","lbs."],
-#         "type": "volume",
-#         "#default": 16
-#      }]
-# kb.collection.insert(value)
+
 
 #kbmain()
-# kb = KnowledgeBase()
-# kb.setCurrentCollection("transforms")
-# value = [{
-#         "transformationType":"meatify",
-#         "table": {"vegetarian": ["chicken"], "fish": ["pork"]}
-#      },
-#     {
-#         "transformationType":"vegetarian",
-#         "table": {"meat": ["tofu"], "fish": ["tofu"]}
-#     },
-#     {
-#         "transformationType":"pescatarian",
-#         "table": {"meat": ["salmon"], "vegetarian":["tuna"]}
-#     }]
-# kb.collection.insert(value)
+
