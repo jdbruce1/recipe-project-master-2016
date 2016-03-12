@@ -305,6 +305,8 @@ def addOneIngredientUI(db):
     data['carbLevel'] = getInput()
     print "Sodium Level? (high, neutral, low):"
     data['sodiumLevel'] = getInput()
+    print "Glycemic Index? (high, neutral, low):"
+    data['giLevel'] = getInput()
     print "\nYou are about to create or update a record as follows:"
     printDict(data)
     print "Confirm? (Y to confirm, N to try again, B to go back)"
