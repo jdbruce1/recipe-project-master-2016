@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from bs4 import BeautifulSoup
 import copy
 import nltk.data
+import pattern.en
 from knowledge_base_api import KnowledgeBase
 from nltk.tokenize import sent_tokenize
 # from nltk import tokenize
@@ -23,7 +24,7 @@ class Recipe:
             self.tools.append(step.tools)
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
-            step.print_step()
+            # step.print_step()
         self.primary_method = self.cooking_methods[-1]
 
     def convert_to_output(self):
@@ -162,8 +163,6 @@ class Recipe:
             lineage = lineage[:-1]
         return None
 
-        #TODO once we know the API better
-
         
 
 
@@ -242,7 +241,7 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+prep_actions = ['form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
 cook_actions = ['heat','cook','bake','simmer','fry','roast']
 post_actions = ['remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
@@ -377,19 +376,47 @@ def parse_into_ingredient(input_string):
         #     print "Prep looks like: "+str(preparation)
         #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
 
-    wholeName = " ".join(string_tokens)
+    name_list = name_from_remainder(string_tokens)
+    if name_list:
+        name = name_list[0]
+        string_tokens = name_list[1]
+    else:
+        string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
+        name_list = name_from_remainder(string_tokens)
+        if name_list:
+            name = name_list[0]
+            string_tokens = name_list[1]
+        else:
+            string_tokens[-1] = string_tokens[-1][:-1]
+            name = " ".join(string_tokens)
+            string_tokens = []
+            print "Ingredient not recogized in: " + name
+
+    print input_string + ": " + name
+    
+    descriptor += string_tokens
+
+    if preparation == [""]:
+        preparation = None
+
+    return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
+
+    # print str(descriptor) + " " + str(name)
+
+def name_from_remainder(str_list):
+    wholeName = " ".join(str_list)
     if kb.searchIngredientsFor(wholeName):
-        name = wholeName
+        return (wholeName, str_list)
     else:
         mainindex = 0
         secondindex = 1
         foundMatch = False
         nameSoFar = ""
-        while not foundMatch and mainindex < len(string_tokens):
-            while secondindex <= len(string_tokens):
+        while not foundMatch and mainindex < len(str_list):
+            while secondindex <= len(str_list):
 
                 tempresult = kb.searchIngredientsFor(
-                        " ".join(string_tokens[mainindex:secondindex]))
+                        " ".join(str_list[mainindex:secondindex]))
 
                 if tempresult:
                     nameSoFar = tempresult["name"]
@@ -399,24 +426,23 @@ def parse_into_ingredient(input_string):
                 secondindex += 1
 
             if foundMatch:
-                break
+                str_list = str_list[:mainindex] + str_list[secondindex-1:]            
+                return (nameSoFar, str_list)
             mainindex += 1
             secondindex = mainindex + 1
+    return None
 
-        if nameSoFar == "":
-            print "Did not recognize an ingredient in string: " + wholeName
-            name = wholeName
-        else:
-            name = nameSoFar
-        string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
-        descriptor += string_tokens
-
-    if preparation == [""]:
-        preparation = None
-
-    return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
-
-    # print str(descriptor) + " " + str(name)
+        # if nameSoFar == "":
+        #     print "Did not recognize an ingredient in string: " + wholeName
+        #     print "Searching for plural"
+        #     tempresult = kb.searchIngredientsFor(wholeName+"s")
+        #     if tempresult:
+        #         name = wholeName+"s"
+        #     else:
+        #         print "No plural either"
+        #         name = wholeName
+        # else:
+        #     name = nameSoFar
 
 
 class Ingredient:
@@ -535,8 +561,8 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.proteinTransform("vegetarian")
-    r_out = r_trans.convert_to_output()
+    # r_trans = r.proteinTransform("vegetarian")
+    r_out = r.convert_to_output()
     print_out(r_out,"")
 
     results = []
@@ -556,7 +582,7 @@ def parse_steps(step_strings,ingredient_list):
     split_steps = []
     for step in parsed_steps:
         split_steps += step.split_up()
-    print split_steps
+    # print split_steps
 
     return split_steps
 
@@ -680,12 +706,12 @@ def interface():
 
 
 def main():
-    autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
+    autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
-    interface()
+    # interface()
 
 
 if __name__ == '__main__':
