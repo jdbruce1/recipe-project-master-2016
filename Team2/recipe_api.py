@@ -57,6 +57,7 @@ class Recipe:
                     new_ingredient_names = kb.categoryTransform(categoryName, transformType)
                     if new_ingredient_names:
                         new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_names[0])
+                        new_ingredient.descriptor = None
                         ingredient_transforms[ingredient.name] = new_ingredient_names[0]
                     categoryLineage = categoryLineage[:-1]
             
@@ -80,9 +81,7 @@ class Recipe:
         for ingredient in newRecipe.ingredients:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
-                categoryLineage = kb.categoryLineage(ingredientInfo)
-
-                if ("broth" in categoryLineage) or ("sauce" in categoryLineage):
+                if (ingredientInfo["decomposition"] and ingredientInfo["decomposition"]!=None):
                     recipeUrl = ingredientInfo["decomposition"]
                     parsedRecipe = parse_url_to_class(recipeUrl)
                     addIng = parsedRecipe.ingredients
@@ -104,21 +103,27 @@ class Recipe:
         if transformType == "to-low-carb":
             field = "carbLevel"
             avoid = "high"
+            toRemove = None
         elif transformType == "from-low-carb":
             field = "carbLevel"
             avoid = "low"
+            toRemove = "low carb"
         elif transformType == "to-low-sodium":
             field = "sodiumLevel"
             avoid = "high"
+            toRemove = "salted"
         elif transformType == "from-low-sodium":
             field = "sodiumLevel"
             avoid = "low"
+            toRemove = None
         elif transformType == "to-low-gi":
             field = "giLevel"
             avoid = "high"
+            toRemove = None
         elif transformType == "from-low-gi":
             field = "giLevel"
             avoid = "low"
+            toRemove = "sugar free"
 
         global kb
         new_ingredient_list = []
@@ -133,10 +138,13 @@ class Recipe:
                     new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
                     if new_ingredient_name:
                         new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                        new_ingredient.descriptor = None
                         ingredient_transforms[ingredient.name] = new_ingredient_name
                     else:
                         new_ingredient = None
                         ingredient_transforms[ingredient.name] = None
+                elif ingredient.descriptor == toRemove:
+                    new_ingredient.descriptor = None
             except KeyError:
                 print "Ingredient has no key for " + field
             if new_ingredient:
@@ -654,7 +662,7 @@ def interface():
 
         if func == "1":
             print "\nPrinting your recipe:"
-            print_out(recipe, " ")
+            print_out(recipe.convert_to_output(), " ")
         elif func == "2":
             print "\nGetting ingredient list:"
             for ing in recipe.ingredients:
@@ -710,7 +718,7 @@ def interface():
                     break
 
                 print "Your transformed recipe is: "
-                print_out(newRecipe, " ") 
+                print_out(newRecipe.convert_to_output(), " ") 
 
                 break 
 
@@ -727,23 +735,12 @@ def interface():
 
 
 def main():
-    # autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
-    # autograder("http://allrecipes.com/recipe/218493/melindas-porcupine-meatballs/")
-    # autograder("http://allrecipes.com/recipe/45736/chicken-tikka-masala/?internalSource=previously%20viewed&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/21694/marinated-grilled-shrimp/?internalSource=previously%20viewed&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/26317/chicken-pot-pie-ix/?internalSource=previously%20viewed&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/223360/eggplant-parmesan-for-the-slow-cooker/?internalSource=staff%20pick&referringContentType=home%20page")
-    # autograder("http://allrecipes.com/recipe/213398/irish-potato-soup/")
-    # autograder("http://allrecipes.com/recipe/8669/chicken-cordon-bleu-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    autograder("http://allrecipes.com/recipe/49552/quinoa-and-black-beans/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    # interface()
+    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    interface()
 
 
 if __name__ == '__main__':
