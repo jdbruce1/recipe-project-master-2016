@@ -57,6 +57,7 @@ class Recipe:
                     new_ingredient_names = kb.categoryTransform(categoryName, transformType)
                     if new_ingredient_names:
                         new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_names[0])
+                        new_ingredient.descriptor = None
                         ingredient_transforms[ingredient.name] = new_ingredient_names[0]
                     categoryLineage = categoryLineage[:-1]
             
@@ -80,9 +81,7 @@ class Recipe:
         for ingredient in newRecipe.ingredients:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
-                categoryLineage = kb.categoryLineage(ingredientInfo)
-
-                if ("broth" in categoryLineage) or ("sauce" in categoryLineage):
+                if (ingredientInfo["decomposition"] and ingredientInfo["decomposition"]!=None):
                     recipeUrl = ingredientInfo["decomposition"]
                     parsedRecipe = parse_url_to_class(recipeUrl)
                     addIng = parsedRecipe.ingredients
@@ -139,6 +138,7 @@ class Recipe:
                     new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
                     if new_ingredient_name:
                         new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                        new_ingredient.descriptor = None
                         ingredient_transforms[ingredient.name] = new_ingredient_name
                     else:
                         new_ingredient = None
@@ -657,7 +657,7 @@ def interface():
 
         if func == "1":
             print "\nPrinting your recipe:"
-            print_out(recipe, " ")
+            print_out(recipe.convert_to_output(), " ")
         elif func == "2":
             print "\nGetting ingredient list:"
             for ing in recipe.ingredients:
@@ -713,7 +713,7 @@ def interface():
                     break
 
                 print "Your transformed recipe is: "
-                print_out(newRecipe, " ") 
+                print_out(newRecipe.convert_to_output(), " ") 
 
                 break 
 
@@ -733,9 +733,9 @@ def main():
     #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
-    autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
-    # interface()
+    interface()
 
 
 if __name__ == '__main__':
