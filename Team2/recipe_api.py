@@ -594,7 +594,7 @@ def autograder(url):
     r_out = r.convert_to_output()
     print_out(r_out,"")
 
-    results = []
+    results = r_out
 
     return results
 
