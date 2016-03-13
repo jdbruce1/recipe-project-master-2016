@@ -735,11 +735,23 @@ def interface():
 
 
 def main():
-    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/218493/melindas-porcupine-meatballs/")
+    # autograder("http://allrecipes.com/recipe/45736/chicken-tikka-masala/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/21694/marinated-grilled-shrimp/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/26317/chicken-pot-pie-ix/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/223360/eggplant-parmesan-for-the-slow-cooker/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/213398/irish-potato-soup/")
+    # autograder("http://allrecipes.com/recipe/8669/chicken-cordon-bleu-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    autograder("http://allrecipes.com/recipe/49552/quinoa-and-black-beans/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    # interface()
     interface()
 
 
