@@ -165,25 +165,18 @@ class Recipe:
         #TODO once we know the API better
 
         
-prep_actions = ['whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast']
-post_actions = ['remove','garnish','season','serve']
-all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet']
-prep_tools = ['knife','cup','bowl','dish']
-all_tools = cooking_tools+prep_tools
 
 
 
 class Step:
-    def __init__(self, text, action, action_type, ingredients, tools):
+    def __init__(self, text, action, action_type, ingredients, tools,time):
         self.text = text
         self.action = action
         self.action_type = action_type
         self.ingredients = ingredients
         self.tools = tools
-
+        self.time = time
 
     def split_up(self):
         text_index = 0
@@ -203,6 +196,7 @@ class Step:
         print "Action: "+self.action
         print "Ingredients: "+", ".join([i.name for i in self.ingredients])
         print "Tools: "+ str(self.tools)
+        print "Time: " + str(self.time) + " minutes"
 
     def transformStepIngredients(self, new_ingredient_list, ingredient_transforms):
         newIngredients = []
@@ -227,7 +221,7 @@ class Step:
         if len(newIngredients) is 0:
             return None
         else:
-            return Step(new_text, self.action, self.action_type, newIngredients, self.tools)
+            return Step(new_text, self.action, self.action_type, newIngredients, self.tools, self.time)
 
 
 def trim_and_join(str_tokens):
@@ -248,6 +242,16 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
+prep_actions = ['whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast']
+post_actions = ['remove','garnish','season','serve']
+all_actions = prep_actions+cook_actions+post_actions
+
+cooking_tools = ['oven','skillet']
+prep_tools = ['knife','cup','bowl','dish']
+all_tools = cooking_tools+prep_tools
+
+times = ['second','seconds','minute','minutes','hour','hours']
 
 def parse_into_step(input_string, ingredient_list):
     global kb
@@ -255,22 +259,33 @@ def parse_into_step(input_string, ingredient_list):
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
 
     action = None
+    time = None
     index = 0
-    while not action and index < len(string_tokens):
-        if string_tokens[index] in prep_actions:
-            action = string_tokens[index]
+    while not action and not time and index < len(string_tokens):
+        word = string_tokens[index]
+        if word in prep_actions:
+            action = word
             action_type = 'prep'
-        elif string_tokens[index] in cook_actions:
-            action = string_tokens[index]
+        elif word in cook_actions:
+            action = word
             action_type = 'cook'
-        elif string_tokens[index] in post_actions:
-            action = string_tokens[index]
+        elif word in post_actions:
+            action = word
             action_type = 'post'
+        elif word in times and index != 0:
+            time = string_tokens[index-1]
+            if word == 'hour' or word == 'hours':
+                time = time * 60
+            elif word == 'second' or word == 'seconds':
+                time = time / 60
         index += 1
+
     if not action:
         action_type = None
         print "Action unidentified in " + text
         action = 'unknown'
+    if not time:
+        time = None
 
     string_tokens = string_tokens[index:]
 
@@ -284,7 +299,7 @@ def parse_into_step(input_string, ingredient_list):
         if tool in text:
             tools.append(tool)
 
-    return Step(text, action, action_type, ingredients, tools)
+    return Step(text, action, action_type, ingredients, tools, time)
 
 def parse_into_ingredient(input_string):
     global kb
