@@ -104,21 +104,27 @@ class Recipe:
         if transformType == "to-low-carb":
             field = "carbLevel"
             avoid = "high"
+            toRemove = None
         elif transformType == "from-low-carb":
             field = "carbLevel"
             avoid = "low"
+            toRemove = "low carb"
         elif transformType == "to-low-sodium":
             field = "sodiumLevel"
             avoid = "high"
+            toRemove = "salted"
         elif transformType == "from-low-sodium":
             field = "sodiumLevel"
             avoid = "low"
+            toRemove = None
         elif transformType == "to-low-gi":
             field = "giLevel"
             avoid = "high"
+            toRemove = None
         elif transformType == "from-low-gi":
             field = "giLevel"
             avoid = "low"
+            toRemove = "sugar free"
 
         global kb
         new_ingredient_list = []
@@ -137,6 +143,8 @@ class Recipe:
                     else:
                         new_ingredient = None
                         ingredient_transforms[ingredient.name] = None
+                elif ingredient.descriptor == toRemove:
+                    new_ingredient.descriptor = None
             except KeyError:
                 print "Ingredient has no key for " + field
             if new_ingredient:
