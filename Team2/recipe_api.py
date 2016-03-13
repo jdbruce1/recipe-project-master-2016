@@ -43,6 +43,7 @@ class Recipe:
         
 
         new_ingredient_list = []
+        ingredient_transforms = {}
 
         for ingredient in self.ingredients:
             new_ingredient = copy.copy(ingredient)
@@ -50,16 +51,21 @@ class Recipe:
             if ingredientInfo:
                 categoryLineage = kb.getIngredientParentLineage(ingredientInfo)
                 new_ingredient_names = None
-                if "protein" in categoryLineage:
-                    while len(categoryLineage) > 0 and not new_ingredient_names:
-                        categoryName = categoryLineage[-1]
-                        new_ingredient_names = kb.categoryTransform(categoryName, transformType)
-                        if new_ingredient_names:
-                            new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_names[0])
-                        categoryLineage = categoryLineage[:-1]
+                while len(categoryLineage) > 0 and not new_ingredient_names:
+                    categoryName = categoryLineage[-1]
+                    new_ingredient_names = kb.categoryTransform(categoryName, transformType)
+                    if new_ingredient_names:
+                        new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_names[0])
+                        ingredient_transforms[ingredient.name] = new_ingredient_names[0]
+                    categoryLineage = categoryLineage[:-1]
             
             new_ingredient_list.append(new_ingredient)
-        newRecipe = Recipe(new_ingredient_list, copy.copy(self.steps))
+        new_steps = []
+        for step in self.steps:
+            new_step = step.transformStepIngredients(new_ingredient_list, ingredient_transforms)
+            if new_step:
+                new_steps.append(new_step)
+        newRecipe = Recipe(new_ingredient_list, new_steps)
         return newRecipe
 
     def diyTransformation(self, transformType):
@@ -107,32 +113,40 @@ class Recipe:
             field = "sodiumLevel"
             avoid = "low"
         elif transformType == "to-low-gi":
-            field = "glycemicIndex"
+            field = "giLevel"
             avoid = "high"
         elif transformType == "from-low-gi":
-            field = "glycemicIndex"
+            field = "giLevel"
             avoid = "low"
 
         global kb
         new_ingredient_list = []
+        ingredient_transforms = {}
         for ingredient in self.ingredients:
             new_ingredient = copy.copy(ingredient)
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+            fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
             try:
-                if ingredientInfo[field] == avoid:
+                if fieldValue == avoid:
                     lineage = kb.getIngredientParentLineage(ingredientInfo)
                     new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
                     if new_ingredient_name:
                         new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                        ingredient_transforms[ingredient.name] = new_ingredient_name
                     else:
                         new_ingredient = None
+                        ingredient_transforms[ingredient.name] = None
             except KeyError:
                 print "Ingredient has no key for " + field
             if new_ingredient:
                 new_ingredient_list.append(new_ingredient)
 
-
-        newRecipe = Recipe(new_ingredient_list, copy.copy(self.steps))
+        new_steps = []
+        for step in self.steps:
+            new_step = step.transformStepIngredients(new_ingredient_list, ingredient_transforms)
+            if new_step:
+                new_steps.append(new_step)
+        newRecipe = Recipe(new_ingredient_list, new_steps)
         return newRecipe
 
     def _searchForSimilarIngredient(self, field, avoid, lineage):
@@ -160,41 +174,16 @@ cooking_tools = ['oven','skillet']
 prep_tools = ['knife','cup','bowl','dish']
 all_tools = cooking_tools+prep_tools
 
+
+
 class Step:
-    def __init__(self,input_string,ingredient_list):
-        global kb
-        self.text = input_string
-        string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
-        
-        self.action = None
-        index = 0
-        while not self.action and index < len(string_tokens):
-            if string_tokens[index] in prep_actions:
-                self.action = string_tokens[index]
-                self.action_type = 'prep'
-            elif string_tokens[index] in cook_actions:
-                self.action = string_tokens[index]
-                self.action_type = 'cook'
-            elif string_tokens[index] in post_actions:
-                self.action = string_tokens[index]
-                self.action_type = 'post'
-            index += 1
-        if not self.action:
-            self.action_type = None
-            print "Action unidentified in " + self.text
-            self.action = 'unknown'
+    def __init__(self, text, action, action_type, ingredients, tools):
+        self.text = text
+        self.action = action
+        self.action_type = action_type
+        self.ingredients = ingredients
+        self.tools = tools
 
-        string_tokens = string_tokens[index:]
-
-        self.ingredients = []
-        for ingredient in ingredient_list:
-            if set(string_tokens) & set(nltk.wordpunct_tokenize(ingredient.name)):
-                self.ingredients.append(ingredient)
-
-        self.tools = []
-        for tool in all_tools:
-            if tool in self.text:
-                self.tools.append(tool)
 
     def split_up(self):
         text_index = 0
@@ -202,8 +191,8 @@ class Step:
         while text_index < len(string_tokens):
             word = string_tokens[text_index]
             if word in all_actions and word != self.action:
-                newBeforeStep = Step(trim_and_join(string_tokens[:text_index]), self.ingredients)
-                newAfterStep = Step(trim_and_join(string_tokens[text_index:]), self.ingredients)
+                newBeforeStep = parse_into_step(trim_and_join(string_tokens[:text_index]), self.ingredients)
+                newAfterStep = parse_into_step(trim_and_join(string_tokens[text_index:]), self.ingredients)
                 return [newBeforeStep, newAfterStep]
             text_index += 1
         return [self]
@@ -215,10 +204,87 @@ class Step:
         print "Ingredients: "+", ".join([i.name for i in self.ingredients])
         print "Tools: "+ str(self.tools)
 
+    def transformStepIngredients(self, new_ingredient_list, ingredient_transforms):
+        newIngredients = []
+        new_text = self.text
+        for ingredient in self.ingredients:
+            try:
+                new_ingredient_name = ingredient_transforms[ingredient.name]
+                if new_ingredient_name:
+                    new_ingredient = None
+                    for new_recipe_ingredient in new_ingredient_list:
+                        if new_ingredient_name == new_recipe_ingredient.name:
+                            new_ingredient = new_recipe_ingredient
+                    if new_ingredient_name is None:
+                        print "Could not find the transformed ingredient in the new ingredient list"
+                    else:
+                        newIngredients.append(new_ingredient)
+                        new_text = replace_token_mentions(new_text, ingredient.name, new_ingredient_name)
+                else:
+                    new_text = replace_token_mentions(new_text, ingredient.name, "")  # does not look great
+            except KeyError:
+                newIngredients.append(ingredient)
+        if len(newIngredients) is 0:
+            return None
+        else:
+            return Step(new_text, self.action, self.action_type, newIngredients, self.tools)
+
+
 def trim_and_join(str_tokens):
     while str_tokens[-1] == 'and' or str_tokens[-1] == ',':
         str_tokens = str_tokens[:-1]
     return ' '.join(str_tokens)
+
+def replace_token_mentions(target, to_replace, replacement):
+    to_replace_tokens = nltk.wordpunct_tokenize(to_replace)
+    size = len(to_replace_tokens)
+    while size > 0:
+        index = 0
+        while index <= len(to_replace_tokens) - size:
+            new_string = target.replace(" ".join(to_replace_tokens[index:size+index]), replacement)
+            if new_string != target:
+                return new_string
+            index += 1
+        size -= 1
+    return target
+
+
+def parse_into_step(input_string, ingredient_list):
+    global kb
+    text = input_string
+    string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
+
+    action = None
+    index = 0
+    while not action and index < len(string_tokens):
+        if string_tokens[index] in prep_actions:
+            action = string_tokens[index]
+            action_type = 'prep'
+        elif string_tokens[index] in cook_actions:
+            action = string_tokens[index]
+            action_type = 'cook'
+        elif string_tokens[index] in post_actions:
+            action = string_tokens[index]
+            action_type = 'post'
+        index += 1
+    if not action:
+        action_type = None
+        print "Action unidentified in " + text
+        action = 'unknown'
+
+    string_tokens = string_tokens[index:]
+
+    ingredients = []
+    for ingredient in ingredient_list:
+        if set(string_tokens) & set(nltk.wordpunct_tokenize(ingredient.name)):
+            ingredients.append(ingredient)
+
+    tools = []
+    for tool in all_tools:
+        if tool in text:
+            tools.append(tool)
+
+    return Step(text, action, action_type, ingredients, tools)
 
 def parse_into_ingredient(input_string):
     global kb
@@ -357,29 +423,34 @@ class Ingredient:
         print "old amount: " + str(old_amount)
         old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
+
         
         if unit_type == "volume":
-            old_count = old_amount / float(old_ingred_record["count_to_volume"])
+            old_c_to_v = float(kb.getIngredientInheritedValue(old_ingred_record, "count_to_volume"))
+            old_count = old_amount / old_c_to_v
         elif unit_type == "count":
             old_count = old_amount
         print "old count: " + str(old_count)
         if unit_type != "mass":
-            mass = old_count * float(old_ingred_record["count_to_mass"])
+            old_c_to_m = float(kb.getIngredientInheritedValue(old_ingred_record, "count_to_mass"))
+            mass = old_count * old_c_to_m
         else:
             mass = old_amount
         print "mass: " + str(mass)
         new_ingred_record = kb.searchIngredientsFor(new_name)
 
-        default_unit = new_ingred_record["default unit"]
+        default_unit = kb.getIngredientInheritedValue(new_ingred_record, "default unit")
+        new_c_to_v = float(kb.getIngredientInheritedValue(new_ingred_record, "count_to_volume"))
+        new_c_to_m = float(kb.getIngredientInheritedValue(new_ingred_record, "count_to_mass"))
         print "new default unit: " + default_unit
         if default_unit == "mass":
             quant = mass
             unit = "ounces"
         elif default_unit == "count":
-            quant = mass / float(new_ingred_record["count_to_mass"])
+            quant = mass / new_c_to_m
             unit = "count"
         elif default_unit == "volume":
-            quant = (mass / float(new_ingred_record["count_to_mass"])) * float(new_ingred_record["count_to_volume"])
+            quant = (mass / new_c_to_m) * new_c_to_v
             unit = "cups"
         else:
             print "Something bad happened"
@@ -463,7 +534,7 @@ def parse_steps(step_strings,ingredient_list):
             continue
         sentences = sent_tokenize(og_step)#tokenizer.tokenize(og_step)
         for sentence in sentences:
-            parsed_steps.append(Step(sentence,ingredient_list))
+            parsed_steps.append(parse_into_step(sentence,ingredient_list))
     split_steps = []
     for step in parsed_steps:
         split_steps += step.split_up()
@@ -487,7 +558,8 @@ def parse_url_to_class(url):
         strs_steps = [raw.text for raw in raw_steps]
         parsed_steps = parse_steps(strs_steps,parsed_ingred)
         parsed_recipe = Recipe(parsed_ingred,parsed_steps)
-    except Exception:
+    except Exception as ex:
+        print ex
         parsed_recipe = False
     return parsed_recipe
 

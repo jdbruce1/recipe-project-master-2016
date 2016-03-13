@@ -81,7 +81,7 @@ class KnowledgeBase:
         updateQuery = {"$set": data}
         return self.collection.update_one({"name": name}, updateQuery, upsert=True)
 
-    #Takes in a category of food (subcategory of protein for veg transformation)
+    #Takes in a category of food
     #and a transformation (vegetarian, pescatarian, or meatify) and returns
     #the transformed category.
     def categoryTransform(self, category, transformation):
@@ -109,6 +109,26 @@ class KnowledgeBase:
             except AttributeError:
                 break
         return lineage
+
+    def getIngredientInheritedValue(self, ingredientResult, field):
+        try:
+            return ingredientResult[field]
+        except KeyError:
+            self.setCurrentCollection("ingredients")
+            lineage = self.getIngredientParentLineage(ingredientResult)
+            lineage = lineage[:-1]  #toss out the ingredient name itself to avoid redundant searches
+            while len(lineage) > 0:
+                category = lineage[-1]
+                categoryResult = self.searchIngredientsFor(category)
+                try:
+                    if categoryResult is not None:
+                        return categoryResult[field]
+                except KeyError:
+                    pass
+                lineage = lineage[:-1]
+
+            print "Could not find an inherited value for " + field
+
 
     def insertTransformationMapping(self, transformation, key, value):
         self.setCurrentCollection("transforms")
