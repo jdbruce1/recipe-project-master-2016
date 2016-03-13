@@ -327,6 +327,16 @@ def addOneIngredientUI(db):
     data['sodiumLevel'] = getInput()
     print "Glycemic Index? (high, neutral, low):"
     data['giLevel'] = getInput()
+    print "Possible cooking methods? (each entry on new line; done or double newline to finish)"
+    currData = getInput()
+    dataLst = []
+    value = None
+    while currData and not currData.lower() == 'done':
+        dataLst.append(currData)
+        currData = getInput()
+    if len(dataLst) > 0:
+        value = dataLst
+    data['cooking methods'] = value
     print "\nYou are about to create or update a record as follows:"
     printDict(data)
     print "Confirm? (Y to confirm, N to try again, B to go back)"
