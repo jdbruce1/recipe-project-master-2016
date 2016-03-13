@@ -312,10 +312,12 @@ def parse_into_ingredient(input_string):
     descriptor = []
     #make parenthesized things descriptors
     if "(" in string_tokens:
+        # print string_tokens
         openIndex = string_tokens.index("(")
         closeIndex = string_tokens.index(")")
         inParens = string_tokens[openIndex+1:closeIndex]
-        descriptor += " ".join(inParens)
+        descriptor += inParens
+        # print descriptor
         string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
 
     if "/" in string_tokens:
@@ -345,6 +347,33 @@ def parse_into_ingredient(input_string):
             unit = "count"
         else:
             unit = None
+
+    if unit == "count" and descriptor != []:
+        try:
+            num = float(descriptor[0])
+            if descriptor[1] == ".":
+                # the number is a decimal
+                try:
+                    # the number has at least one decimal point
+                    first_point = float(descriptor[2])
+                    if first_point < 10:
+                        num = num + 1.0*first_point/10
+                    else:
+                        num = num + 1.0*first_point/100
+                    descriptor_unit = kb.getUnit(descriptor[3])
+                    descriptor = descriptor[4:]
+                except ValueError:
+                    print "There's a non-decimal dot here."
+            else:
+                # number has no decimal
+                descriptor_unit = kb.getUnit(descriptor[1])
+                descriptor = descriptor[2:]
+
+            if descriptor_unit:
+                quant = num
+                unit = descriptor_unit["name"]
+        except ValueError:
+            pass
 
     preparation = [""]
     if "," in string_tokens:
@@ -392,7 +421,7 @@ def parse_into_ingredient(input_string):
             string_tokens = []
             print "Ingredient not recogized in: " + name
 
-    print input_string + ": " + name
+    # print input_string + ": " + name
     
     descriptor += string_tokens
 
@@ -431,18 +460,6 @@ def name_from_remainder(str_list):
             mainindex += 1
             secondindex = mainindex + 1
     return None
-
-        # if nameSoFar == "":
-        #     print "Did not recognize an ingredient in string: " + wholeName
-        #     print "Searching for plural"
-        #     tempresult = kb.searchIngredientsFor(wholeName+"s")
-        #     if tempresult:
-        #         name = wholeName+"s"
-        #     else:
-        #         print "No plural either"
-        #         name = wholeName
-        # else:
-        #     name = nameSoFar
 
 
 class Ingredient:
