@@ -21,40 +21,52 @@ value = [{
         "#default": .020833
      },
      {
-     	"name": "pints",
-     	"alt_names": ["pint","pt.","Pint","Pt.","Pints"],
-     	"type": "volume",
-     	"#default": 2
+        "name": "pints",
+        "alt_names": ["pint","pt.","Pint","Pt.","Pints"],
+        "type": "volume",
+        "#default": 2
      },
      {
-     	"name": "quarts",
-     	"alt_names": ["quart","qt.","Quart","Qt.","Quarts"],
-     	"type": "volume",
-     	"#default": 4
+        "name": "quarts",
+        "alt_names": ["quart","qt.","Quart","Qt.","Quarts"],
+        "type": "volume",
+        "#default": 4
      },
      {
-     	"name": "gallons",
-     	"alt_names": ["gallon","gal.","Gallon","Gallons","Gal."],
-     	"type": "volume",
-     	"#default": 16
+        "name": "gallons",
+        "alt_names": ["gallon","gal.","Gallon","Gallons","Gal."],
+        "type": "volume",
+        "#default": 16
      },
      {
-     	"name": "mililiters",
-     	"alt_names": ["mililiter","mililitres","mililitre","mL","mL.","ml","ml.","Mililiter","Mililiters","Mililitres","Mililitre"],
-     	"type": "volume",
-     	"#default": .0042267
+        "name": "mililiters",
+        "alt_names": ["mililiter","mililitres","mililitre","mL","mL.","ml","ml.","Mililiter","Mililiters","Mililitres","Mililitre"],
+        "type": "volume",
+        "#default": .0042267
      },
      {
-     	"name": "litres",
-     	"alt_names": ["liter","L","Litres","Litres"],
-     	"type": "volume",
-     	"#default": 4.2267
+        "name": "litres",
+        "alt_names": ["liter","L","Litres","Litres"],
+        "type": "volume",
+        "#default": 4.2267
      },
      {
-     	"name": "pinch",
-     	"alt_names": ["pinches","Pinch","Pinches"]
-     	"type": "volume",
-     	"#default": .001302
+        "name": "pinch",
+        "alt_names": ["pinches","Pinch","Pinches"],
+        "type": "volume",
+        "#default": .001302
+     },
+     {
+        "name": "grams",
+        "alt_names": ["gram","g","g.","Grams","Gram","G"],
+        "type": "mass",
+        "#default": .035
+     },
+     {
+        "name": "kilograms",
+        "alt_names": ["kilogram","kg","kg.","Kilograms","Kilogram","Kg","Kg."],
+        "type": "mass",
+        "#default": 35.3
      },
      {
         "name": "ounces",
