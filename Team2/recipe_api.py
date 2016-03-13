@@ -411,6 +411,9 @@ def parse_into_ingredient(input_string):
         string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
         descriptor += string_tokens
 
+    if preparation == [""]:
+        preparation = None
+
     return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
 
     # print str(descriptor) + " " + str(name)

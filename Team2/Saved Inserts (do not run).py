@@ -76,14 +76,41 @@ kb = KnowledgeBase()
 kb.setCurrentCollection("transforms")
 value = [{
         "transformationType":"meatify",
-        "table": {"vegetarian": ["chicken"], "fish": ["pork"]}
+        "table": 
+        {"vegetarian": ["chicken"], 
+        "fish": ["pork"],
+        "beans": ["ground beef"],
+        "portobello": ["beef"],
+        "tofu": ["chicken"],
+        "vegetable stock": ["chicken stock"]
+        }
      },
     {
         "transformationType":"vegetarian",
-        "table": {"meat": ["tofu"], "fish": ["tofu"]}
+        "table": 
+        {"meat": ["tofu"], 
+        "fish": ["tofu"],
+        "beef": ["portobello mushrooms"],
+        "bacon": ["panko"],
+        "prosciutto": ["panko"],
+        "meat stock": ["vegetable stock"]
+        }
     },
     {
         "transformationType":"pescatarian",
-        "table": {"meat": ["salmon"], "vegetarian":["tuna"]}
+        "table": 
+        {"meat": ["salmon"], 
+        "vegetarian":["tuna"],
+        "beef": ["portobello mushrooms"],
+        "steak": ["tuna steak"],
+        "pork": ["tilapia"],
+        "poultry": ["tilapia"],
+        "bacon": ["panko"],
+        "prosciutto": ["panko"],
+        "meat stock": ["vegetable stock"]
+        }
     }]
 kb.collection.insert(value)
+
+
+
