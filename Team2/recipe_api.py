@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from bs4 import BeautifulSoup
 import copy
 import nltk.data
+import pattern.en
 from knowledge_base_api import KnowledgeBase
 from nltk.tokenize import sent_tokenize
 # from nltk import tokenize
@@ -23,7 +24,7 @@ class Recipe:
             self.tools.append(step.tools)
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
-            step.print_step()
+            # step.print_step()
         self.primary_method = self.cooking_methods[-1]
 
     def convert_to_output(self):
@@ -162,28 +163,19 @@ class Recipe:
             lineage = lineage[:-1]
         return None
 
-        #TODO once we know the API better
-
         
-prep_actions = ['whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast']
-post_actions = ['remove','garnish','season','serve']
-all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet']
-prep_tools = ['knife','cup','bowl','dish']
-all_tools = cooking_tools+prep_tools
 
 
 
 class Step:
-    def __init__(self, text, action, action_type, ingredients, tools):
+    def __init__(self, text, action, action_type, ingredients, tools,time):
         self.text = text
         self.action = action
         self.action_type = action_type
         self.ingredients = ingredients
         self.tools = tools
-
+        self.time = time
 
     def split_up(self):
         text_index = 0
@@ -203,6 +195,7 @@ class Step:
         print "Action: "+self.action
         print "Ingredients: "+", ".join([i.name for i in self.ingredients])
         print "Tools: "+ str(self.tools)
+        print "Time: " + str(self.time) + " minutes"
 
     def transformStepIngredients(self, new_ingredient_list, ingredient_transforms):
         newIngredients = []
@@ -227,7 +220,7 @@ class Step:
         if len(newIngredients) is 0:
             return None
         else:
-            return Step(new_text, self.action, self.action_type, newIngredients, self.tools)
+            return Step(new_text, self.action, self.action_type, newIngredients, self.tools, self.time)
 
 
 def trim_and_join(str_tokens):
@@ -248,6 +241,16 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
+prep_actions = ['form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast']
+post_actions = ['remove','garnish','season','serve']
+all_actions = prep_actions+cook_actions+post_actions
+
+cooking_tools = ['oven','skillet']
+prep_tools = ['knife','cup','bowl','dish']
+all_tools = cooking_tools+prep_tools
+
+times = ['second','seconds','minute','minutes','hour','hours']
 
 def parse_into_step(input_string, ingredient_list):
     global kb
@@ -255,22 +258,33 @@ def parse_into_step(input_string, ingredient_list):
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
 
     action = None
+    time = None
     index = 0
-    while not action and index < len(string_tokens):
-        if string_tokens[index] in prep_actions:
-            action = string_tokens[index]
+    while not action and not time and index < len(string_tokens):
+        word = string_tokens[index]
+        if word in prep_actions:
+            action = word
             action_type = 'prep'
-        elif string_tokens[index] in cook_actions:
-            action = string_tokens[index]
+        elif word in cook_actions:
+            action = word
             action_type = 'cook'
-        elif string_tokens[index] in post_actions:
-            action = string_tokens[index]
+        elif word in post_actions:
+            action = word
             action_type = 'post'
+        elif word in times and index != 0:
+            time = string_tokens[index-1]
+            if word == 'hour' or word == 'hours':
+                time = time * 60
+            elif word == 'second' or word == 'seconds':
+                time = time / 60
         index += 1
+
     if not action:
         action_type = None
         print "Action unidentified in " + text
         action = 'unknown'
+    if not time:
+        time = None
 
     string_tokens = string_tokens[index:]
 
@@ -284,7 +298,7 @@ def parse_into_step(input_string, ingredient_list):
         if tool in text:
             tools.append(tool)
 
-    return Step(text, action, action_type, ingredients, tools)
+    return Step(text, action, action_type, ingredients, tools, time)
 
 def parse_into_ingredient(input_string):
     global kb
@@ -298,10 +312,12 @@ def parse_into_ingredient(input_string):
     descriptor = []
     #make parenthesized things descriptors
     if "(" in string_tokens:
+        # print string_tokens
         openIndex = string_tokens.index("(")
         closeIndex = string_tokens.index(")")
         inParens = string_tokens[openIndex+1:closeIndex]
-        descriptor += " ".join(inParens)
+        descriptor += inParens
+        # print descriptor
         string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
 
     if "/" in string_tokens:
@@ -331,6 +347,33 @@ def parse_into_ingredient(input_string):
             unit = "count"
         else:
             unit = None
+
+    if unit == "count" and descriptor != []:
+        try:
+            num = float(descriptor[0])
+            if descriptor[1] == ".":
+                # the number is a decimal
+                try:
+                    # the number has at least one decimal point
+                    first_point = float(descriptor[2])
+                    if first_point < 10:
+                        num = num + 1.0*first_point/10
+                    else:
+                        num = num + 1.0*first_point/100
+                    descriptor_unit = kb.getUnit(descriptor[3])
+                    descriptor = descriptor[4:]
+                except ValueError:
+                    print "There's a non-decimal dot here."
+            else:
+                # number has no decimal
+                descriptor_unit = kb.getUnit(descriptor[1])
+                descriptor = descriptor[2:]
+
+            if descriptor_unit:
+                quant = num
+                unit = descriptor_unit["name"]
+        except ValueError:
+            pass
 
     preparation = [""]
     if "," in string_tokens:
@@ -362,19 +405,46 @@ def parse_into_ingredient(input_string):
         #     print "Prep looks like: "+str(preparation)
         #TODO: need to add when prep method is part of ingredient name (e.g. "sliced mushrooms"); after DB is set up
 
-    wholeName = " ".join(string_tokens)
+    name_list = name_from_remainder(string_tokens)
+    if name_list:
+        name = name_list[0]
+        string_tokens = name_list[1]
+    else:
+        string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
+        name_list = name_from_remainder(string_tokens)
+        if name_list:
+            name = name_list[0]
+            string_tokens = name_list[1]
+        else:
+            name = " ".join(string_tokens)
+            string_tokens = []
+            print "Ingredient not recogized in: " + name
+
+    # print input_string + ": " + name
+    
+    descriptor += string_tokens
+
+    if preparation == [""]:
+        preparation = None
+
+    return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
+
+    # print str(descriptor) + " " + str(name)
+
+def name_from_remainder(str_list):
+    wholeName = " ".join(str_list)
     if kb.searchIngredientsFor(wholeName):
-        name = wholeName
+        return (wholeName, str_list)
     else:
         mainindex = 0
         secondindex = 1
         foundMatch = False
         nameSoFar = ""
-        while not foundMatch and mainindex < len(string_tokens):
-            while secondindex <= len(string_tokens):
+        while not foundMatch and mainindex < len(str_list):
+            while secondindex <= len(str_list):
 
                 tempresult = kb.searchIngredientsFor(
-                        " ".join(string_tokens[mainindex:secondindex]))
+                        " ".join(str_list[mainindex:secondindex]))
 
                 if tempresult:
                     nameSoFar = tempresult["name"]
@@ -384,21 +454,11 @@ def parse_into_ingredient(input_string):
                 secondindex += 1
 
             if foundMatch:
-                break
+                str_list = str_list[:mainindex] + str_list[secondindex-1:]            
+                return (nameSoFar, str_list)
             mainindex += 1
             secondindex = mainindex + 1
-
-        if nameSoFar == "":
-            print "Did not recognize an ingredient in string: " + wholeName
-            name = wholeName
-        else:
-            name = nameSoFar
-        string_tokens = string_tokens[:mainindex] + string_tokens[secondindex-1:]
-        descriptor += string_tokens
-
-    return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
-
-    # print str(descriptor) + " " + str(name)
+    return None
 
 
 class Ingredient:
@@ -517,8 +577,8 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.proteinTransform("vegetarian")
-    r_out = r_trans.convert_to_output()
+    # r_trans = r.proteinTransform("vegetarian")
+    r_out = r.convert_to_output()
     print_out(r_out,"")
     return r_out
 
@@ -535,7 +595,7 @@ def parse_steps(step_strings,ingredient_list):
     split_steps = []
     for step in parsed_steps:
         split_steps += step.split_up()
-    print split_steps
+    # print split_steps
 
     return split_steps
 
@@ -659,12 +719,12 @@ def interface():
 
 
 def main():
-    autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
     #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
-    interface()
+    # interface()
 
 
 if __name__ == '__main__':
