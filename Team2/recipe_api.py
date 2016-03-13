@@ -241,9 +241,9 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast']
-post_actions = ['remove','garnish','season','serve']
+prep_actions = ['pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute']
+post_actions = ['cool','let','discard','drain','remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
 
 cooking_tools = ['oven','skillet']
@@ -255,6 +255,7 @@ times = ['second','seconds','minute','minutes','hour','hours']
 def parse_into_step(input_string, ingredient_list):
     global kb
     text = input_string
+    input_string = input_string.replace('broth','stock')
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
 
     action = None
@@ -306,7 +307,8 @@ def parse_into_ingredient(input_string):
     quant = None
     unit = None
     name = None
-
+    input_string = input_string.replace('broth','stock')
+    print input_string
     #tokenize 
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
     descriptor = []
@@ -410,7 +412,8 @@ def parse_into_ingredient(input_string):
         name = name_list[0]
         string_tokens = name_list[1]
     else:
-        string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
+        if string_tokens[-1][-1] != "s":
+            string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
         name_list = name_from_remainder(string_tokens)
         if name_list:
             name = name_list[0]
@@ -423,6 +426,8 @@ def parse_into_ingredient(input_string):
     # print input_string + ": " + name
     
     descriptor += string_tokens
+    if name in descriptor:
+        descriptor.remove(name)
 
     if preparation == [""]:
         preparation = None
@@ -722,11 +727,22 @@ def interface():
 
 
 def main():
-    #autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
-    autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
-    #autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/214500/sausage-peppers-onions-and-potato-bake/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/221314/very-old-meatloaf-recipe/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/219331/pepperoni-pizza-casserole/?internalSource=rotd&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/40154/shrimp-lemon-pepper-linguini/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/72381/orange-roasted-salmon/?internalSource=rotd&referringId=416&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/218493/melindas-porcupine-meatballs/")
+    # autograder("http://allrecipes.com/recipe/45736/chicken-tikka-masala/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/21694/marinated-grilled-shrimp/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/26317/chicken-pot-pie-ix/?internalSource=previously%20viewed&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/223360/eggplant-parmesan-for-the-slow-cooker/?internalSource=staff%20pick&referringContentType=home%20page")
+    # autograder("http://allrecipes.com/recipe/213398/irish-potato-soup/")
+    # autograder("http://allrecipes.com/recipe/8669/chicken-cordon-bleu-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    autograder("http://allrecipes.com/recipe/49552/quinoa-and-black-beans/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     # interface()
 
 
