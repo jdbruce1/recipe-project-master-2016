@@ -139,6 +139,10 @@ class KnowledgeBase:
         self.setCurrentCollection("units")
         return self.queryOneDict({"$or": [{"alt_names": unitName}, {"name": unitName}]})
 
+    def getAllUnitsOfType(self, unit_type):
+        self.setCurrentCollection("units")
+        return self.queryAll("type", unit_type)
+
 
 # The following methods are used to make a UI to easily add to the database.
 

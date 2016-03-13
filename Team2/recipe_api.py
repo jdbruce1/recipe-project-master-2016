@@ -516,7 +516,9 @@ class Ingredient:
             print "Something bad happened"
         print "new quant " + str(quant)
         print "new unit " + str(unit)
-        newIngredient = Ingredient(new_name,quant,unit,self.descriptor,self.preparation,self.prep_desc)
+        adjusted_units = adjust_units(quant, default_unit)
+
+        newIngredient = Ingredient(new_name,adjusted_units["quant"],adjusted_units["unit"],self.descriptor,self.preparation,self.prep_desc)
         return newIngredient
 
 
@@ -547,6 +549,29 @@ class Ingredient:
 
         print ing_string
         return
+
+def adjust_units(quant, unit_type):
+    global kb
+    units = kb.getAllUnitsOfType(unit_type)
+    adjusted_quants = {}
+    best_quant = 8000 #higher than anything normal
+    best_low_quant = 0
+    best_unit = None
+    for unit in units:
+        new_quant = quant/unit["#default"]
+        if new_quant >= 1 and new_quant < best_quant:
+            best_quant = new_quant
+            best_unit = unit
+        elif best_quant == 8000:
+            if new_quant > best_low_quant:
+                best_low_quant = new_quant
+                best_unit = unit
+    if best_quant == 8000:
+        best_quant = best_low_quant
+
+    return {"quant": best_quant, "unit": best_unit}
+
+
 
 def div_strings(first, second):
     return float(first)/float(second)
