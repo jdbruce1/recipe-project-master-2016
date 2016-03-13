@@ -529,7 +529,9 @@ class Ingredient:
             print "Something bad happened"
         print "new quant " + str(quant)
         print "new unit " + str(unit)
-        newIngredient = Ingredient(new_name,quant,unit,self.descriptor,self.preparation,self.prep_desc)
+        adjusted_units = adjust_units(quant, default_unit)
+
+        newIngredient = Ingredient(new_name,adjusted_units["quant"],adjusted_units["unit"],self.descriptor,self.preparation,self.prep_desc)
         return newIngredient
 
 
@@ -561,6 +563,30 @@ class Ingredient:
         print ing_string
         return
 
+def adjust_units(quant, unit_type):
+    global kb
+    units = kb.getAllUnitsOfType(unit_type)
+    adjusted_quants = {}
+    best_quant = 8000 #higher than anything normal
+    best_low_quant = 0
+    best_unit = None
+    for unit in units:
+        new_quant = round(quant/float(unit["#default"]), 1)
+        print str(new_quant) + unit["name"]
+        if new_quant >= 1 and new_quant < best_quant:
+            best_quant = new_quant
+            best_unit = unit["name"]
+        elif best_quant == 8000:
+            if new_quant > best_low_quant:
+                best_low_quant = new_quant
+                best_unit = unit["name"]
+    if best_quant == 8000:
+        best_quant = best_low_quant
+
+    return {"quant": best_quant, "unit": best_unit}
+
+
+
 def div_strings(first, second):
     return float(first)/float(second)
 
@@ -590,13 +616,11 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    # r_trans = r.proteinTransform("vegetarian")
-    r_out = r.convert_to_output()
+    r_trans = r.healthTransformation("to-low-carb")
+    r_out = r_trans.convert_to_output()
     print_out(r_out,"")
 
-    results = r_out
-
-    return results
+    return r_out
 
 def parse_steps(step_strings,ingredient_list):
     # tokenizer = nltk.data.load('tokenizers/punkt/english/pickle')
@@ -747,7 +771,7 @@ def main():
     # autograder("http://allrecipes.com/recipe/223360/eggplant-parmesan-for-the-slow-cooker/?internalSource=staff%20pick&referringContentType=home%20page")
     # autograder("http://allrecipes.com/recipe/213398/irish-potato-soup/")
     # autograder("http://allrecipes.com/recipe/8669/chicken-cordon-bleu-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    autograder("http://allrecipes.com/recipe/49552/quinoa-and-black-beans/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    autograder("http://allrecipes.com/recipe/12023/one-dish-broccoli-rotini/?internalSource=search%20result&referringContentType=search%20results")
     #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
