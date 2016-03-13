@@ -19,7 +19,7 @@
             "max": 3
         },
         {
-            "name": ["onion"],
+            "name": ["onion", "onion, chopped"],
             "quantity": [1],
             "measurement": ["unit", "units", "discrete"],
             "descriptor": [],
@@ -37,7 +37,7 @@
             "max": 3
         },
         {
-            "name": ["bread crumbs"],
+            "name": ["bread crumbs", "dried bread crumbs"],
             "quantity": [1],
             "measurement": ["cup"],
             "descriptor": ["dried"],
@@ -55,16 +55,16 @@
             "max": 3
         },
         {
-            "name": ["brown sugar"],
+            "name": ["brown sugar", "sugar"],
             "quantity": [2],
             "measurement": ["tablespoon", "tablespoons"],
-            "descriptor": [],
+            "descriptor": ["brown"],
             "preparation": [],
             "prep-description": [],
-            "max": 3
+            "max": 4
         },
         {
-            "name": ["mustard"],
+            "name": ["mustard", "prepared mustard"],
             "quantity": [2],
             "measurement": ["tablespoon", "tablespoons"],
             "descriptor": ["prepared"],
@@ -74,7 +74,7 @@
         },
         {
             "name": ["ketchup"],
-            "quantity": [0.333],
+            "quantity": [0.333, 0.33, 0.3333],
             "measurement": ["cup"],
             "descriptor": [],
             "preparation": [],
@@ -83,7 +83,7 @@
         }
     ],
     "max": {
-        "ingredients": 30,
+        "ingredients": 31,
         "primary cooking method": 1,
         "cooking tools": 4,
         "cooking methods": 6

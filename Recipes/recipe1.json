@@ -3,7 +3,7 @@
     "ingredients": [{
             "name": ["butter"],
             "quantity": [0.5],
-            "measurement": ["cup"],
+            "measurement": ["cup", "cups"],
             "descriptor": [],
             "preparation": [],
             "prep-description": [],
@@ -30,7 +30,7 @@
         {
             "name": ["pepper", "black pepper"],
             "quantity": [0.25],
-            "measurement": ["teaspoon"],
+            "measurement": ["teaspoon", "teaspoons"],
             "descriptor": ["black"],
             "preparation": [],
             "prep-description": [],
@@ -39,7 +39,7 @@
         {
             "name": ["parsley", "dried parsley"],
             "quantity": [1],
-            "measurement": ["tablespoon"],
+            "measurement": ["tablespoon", "tablespoons"],
             "descriptor": ["dried"],
             "preparation": ["dried"],
             "prep-description": [],

@@ -1,4 +1,4 @@
-'''Version 0.2'''
+'''Version 0.32'''
 import json
 import csv
 import glob
@@ -64,12 +64,29 @@ def check_ingredients(answer, stud):
     for x in range(min([len(answer), len(stud)])):
         for ind in ['name', 'measurement', 'quantity', 'descriptor', 'preparation', 'prep-description']:
             if ind in stud[x]:
-                print stud[x][ind]
-                print answer[x][ind]
-                if stud[x][ind] in answer[x][ind]:
+                print "\nYour answer: %s"%str(stud[x][ind])
+                print "Valid answers: %s"%str(answer[x][ind])
+
+                if ind == 'quantity':
+                    flag = False
+                    for val in answer[x][ind]:
+                        if type(stud[x][ind]) is str:
+                            if val == stud[x][ind]:
+                                flag = True
+                        elif val == stud[x][ind]:
+                            flag = True
+                        elif float('%.2f'%stud[x][ind]) == val:
+                            flag = True
+                        if flag:
+                            score += 1
+                        else:
+                            print "Match!"
+                
+                elif stud[x][ind] in answer[x][ind]:
                     score += 1
-        print "---"
+
         scores.append(min([score, answer[x]['max']]))
+        print "Score: %s\n---"%str(scores[-1])
         score = 0
 
     return sum(scores)
@@ -97,7 +114,7 @@ def main(team, init=False):
 
     cnt = 1
 
-    for answer in (get_file(fn) for fn in glob.iglob('../Recipes/*.json')):
+    for answer in (get_file(fn) for fn in glob.iglob('Recipes/*.json')):
         stud = getattr(api, "autograder")(answer['url'])
         temp = Counter(dict(zip(keys, [0]*len(keys))))
 
@@ -112,7 +129,7 @@ def main(team, init=False):
             temp['ingredients'] = check_ingredients(answer['ingredients'], stud)/float(answer['max']['ingredients'])
             scores += temp
             print "%s\t%s\t%s\t%s\t%s" % ("Recipe", 'Ingredients', 'Primary Method', 'Methods', 'Tools')
-            print "Recipe %d:\t%.3f\t%d\t%.3f\t%.3f" % (cnt, temp['ingredients'], temp['primary cooking method'], temp['cooking methods'], tmptool)
+            print "Recipe %d:\t%.3f\t%d\t%.3f\t%.3f" % (cnt, temp['ingredients'], temp['primary cooking method'], temp['cooking methods'], temp['cooking tools'])
             cnt += 1
         else:
             print "student answer formatting error"
