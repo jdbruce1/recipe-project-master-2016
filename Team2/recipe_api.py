@@ -707,10 +707,10 @@ def interface():
 
         if func == "1":
             print("Here is your recipe: \n")
-            for ing in newRecipe.ingredients:
-                    ing.print_ingredient()
+            for ing in recipe.ingredients:
+                ing.print_ingredient()
                 print "Steps:\n"
-                for step in newRecipe.steps:
+                for step in recipe.steps:
                     step.print_step()
         elif func == "2":
             print "\nGetting ingredient list:"
