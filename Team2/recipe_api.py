@@ -396,11 +396,7 @@ def parse_into_ingredient(input_string):
         except ValueError:
             pass
 
-    preparation = [""]
-    if "," in string_tokens:
-        commaIndex = string_tokens.index(",")
-        preparation = ' '.join(string_tokens[commaIndex+1:])
-        string_tokens = string_tokens[:commaIndex]
+
     #     prepIndex = 0
     #     for word in string_tokens[commaIndex+1:]:
     #         if word == "and":
@@ -459,6 +455,12 @@ def parse_into_ingredient(input_string):
                     string_tokens = []
                     print "Ingredient not recogized in: " + name
     
+    preparation = [""]
+    if "," in string_tokens:
+        commaIndex = string_tokens.index(",")
+        preparation = ' '.join(string_tokens[commaIndex+1:])
+        string_tokens = string_tokens[:commaIndex]
+
     descriptor += string_tokens
     if name in descriptor:
         descriptor.remove(name)
@@ -481,8 +483,8 @@ def name_from_remainder(str_list):
         while not foundMatch and mainindex < len(str_list):
             while secondindex <= len(str_list):
 
-                tempresult = kb.searchIngredientsFor(
-                        " ".join(str_list[mainindex:secondindex]))
+                tempresult = find_ingred_and_plural(str_list[mainindex:secondindex])  #kb.searchIngredientsFor(
+                        #" ".join(str_list[mainindex:secondindex]))
 
                 if tempresult:
                     nameSoFar = tempresult["name"]
@@ -498,6 +500,14 @@ def name_from_remainder(str_list):
             secondindex = mainindex + 1
     return None
 
+def find_ingred_and_plural(str_list):
+    tempresult = kb.searchIngredientsFor(" ".join(str_list))
+    if tempresult:
+        return tempresult
+    else:
+        str_list[-1] = pattern.en.pluralize(str_list[-1])
+        tempresult = kb.searchIngredientsFor(" ".join(str_list))
+        return tempresult
 
 class Ingredient:
     def __init__(self, name, quant, unit, desc, prep, prep_desc):
