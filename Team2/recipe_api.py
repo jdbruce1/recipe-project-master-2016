@@ -24,7 +24,8 @@ class Recipe:
             self.tools.append(step.tools)
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
-        self.primary_method = self.cooking_methods[-1]
+        if len(self.cooking_methods) == 0:
+            self.primary_method = None
 
     def convert_to_output(self):
         output_dict = {}
@@ -575,7 +576,7 @@ class Ingredient:
 
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
-        if not ing_dict["measurement"] or ing_dict["measurement"] == "count":
+        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
                 ing_amount = ing_dict["quantity"]
             else:
