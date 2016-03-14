@@ -738,7 +738,7 @@ def parse_url_to_class(url):
     return parsed_recipe
 
 def interface():
-    print "\nHi, my name is Sarah. I'm learning to cook, and I'd love to help you today!\n"
+    print "\nHi, my name is Samwise Gamgee. I'm learning to cook, and I'd love to help you today!\n"
 
     recipe = False
     while True:
