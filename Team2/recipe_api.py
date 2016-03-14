@@ -9,7 +9,7 @@ import nltk.data
 import pattern.en
 from knowledge_base_api import KnowledgeBase
 from nltk.tokenize import sent_tokenize
-# from nltk import tokenize
+
 
 kb = KnowledgeBase()
 
@@ -24,7 +24,6 @@ class Recipe:
             self.tools.append(step.tools)
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
-            # step.print_step()
         self.primary_method = self.cooking_methods[-1]
 
     def convert_to_output(self):
@@ -133,24 +132,27 @@ class Recipe:
         new_ingredient_list = []
         ingredient_transforms = {}
         for ingredient in self.ingredients:
-            new_ingredient = copy.copy(ingredient)
-            ingredientInfo = kb.searchIngredientsFor(ingredient.name)
-            fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
-            try:
-                if fieldValue == avoid:
-                    lineage = kb.getIngredientParentLineage(ingredientInfo)
-                    new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
-                    if new_ingredient_name:
-                        new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+            if ingredient.name == "salt" and transformType == "to-low-sodium":
+                new_ingredient = None
+            else:
+                new_ingredient = copy.copy(ingredient)
+                ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+                fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
+                try:
+                    if fieldValue == avoid:
+                        lineage = kb.getIngredientParentLineage(ingredientInfo)
+                        new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
+                        if new_ingredient_name:
+                            new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                            new_ingredient.descriptor = None
+                            ingredient_transforms[ingredient.name] = new_ingredient_name
+                        else:
+                            new_ingredient = None
+                            ingredient_transforms[ingredient.name] = None
+                    elif ingredient.descriptor == toRemove:
                         new_ingredient.descriptor = None
-                        ingredient_transforms[ingredient.name] = new_ingredient_name
-                    else:
-                        new_ingredient = None
-                        ingredient_transforms[ingredient.name] = None
-                elif ingredient.descriptor == toRemove:
-                    new_ingredient.descriptor = None
-            except KeyError:
-                print "Ingredient has no key for " + field
+                except KeyError:
+                    print "Ingredient has no key for " + field
             if new_ingredient:
                 new_ingredient_list.append(new_ingredient)
 
@@ -326,31 +328,27 @@ def parse_into_ingredient(input_string):
     name = None
     input_string = input_string.replace('broth','stock')
 
-    #print input_string
-    #tokenize 
+
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
     descriptor = []
     #make parenthesized things descriptors
     if "(" in string_tokens:
-        # print string_tokens
         openIndex = string_tokens.index("(")
         closeIndex = string_tokens.index(")")
         inParens = string_tokens[openIndex+1:closeIndex]
         descriptor += inParens
-        # print descriptor
         string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
 
     if "/" in string_tokens:
         tokens_processed = []
         div_index = string_tokens.index("/")
         quant = div_strings(string_tokens[div_index-1],string_tokens[div_index+1])
-        #print string_tokens
+
         if div_index > 1:
             quant += float(string_tokens[0])
         #string_tokens = string_tokens[:(div_index-1)] + string_tokens[(div_index+2):]
         string_tokens = string_tokens[(div_index+2):]
-        #print string_tokens
-        #print quant
+  
     else:
         try:
             quant = float(string_tokens[0])
@@ -452,8 +450,6 @@ def parse_into_ingredient(input_string):
                     name = " ".join(str_token_store)
                     string_tokens = []
                     print "Ingredient not recogized in: " + name
-
-    # print input_string + ": " + name
     
     descriptor += string_tokens
     if name in descriptor:
@@ -464,7 +460,6 @@ def parse_into_ingredient(input_string):
 
     return Ingredient(name, quant, unit, descriptor, preparation,prep_desc)
 
-    # print str(descriptor) + " " + str(name)
 
 def name_from_remainder(str_list):
     wholeName = " ".join(str_list)
@@ -562,7 +557,7 @@ class Ingredient:
 
 
     def convert_to_output(self):
-        # print "Processing " + self.name
+     
         output_dict = {}
         output_dict["name"] = self.name
         output_dict["quantity"] = str(self.quant)
@@ -575,16 +570,24 @@ class Ingredient:
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
         ing_amount = ing_dict["quantity"] + " " + ing_dict["measurement"]
-        ing_descript = " " + ing_dict["descriptor"]
+        ing_descript = self.descriptor
         ing_name = " " + ing_dict["name"]
-        ing_prep = ", " + ing_dict["preparation"]
+        ing_prep = self.prep_desc
 
-        if ing_descript == []:
+        if ing_descript == None:
+            ing_string = ing_amount + ing_name
+        elif len(ing_descript) < 1:
             ing_string = ing_amount + ing_name
         else:
-            ing_string = ing_amount + ing_descript + ing_name
-        if ing_prep != [""]:
-            ing_string += ing_prep
+            ing_string = ing_amount
+            for d in ing_descript:
+                if str(d) not in ing_name:
+                    ing_string += " " + str(d)
+            ing_string += ing_name
+        if ing_prep != [""] and ing_prep != None:
+            print "ing_prep:"
+            print ing_prep
+            ing_string += ", " + str(ing_prep)
 
         print ing_string
         return
@@ -676,8 +679,6 @@ def autograder(url):
     return r_out
 
 def parse_steps(step_strings,ingredient_list):
-    # tokenizer = nltk.data.load('tokenizers/punkt/english/pickle')
-    # print step_strings
     parsed_steps = []
     for og_step in step_strings:
         if len(og_step) == 0:
@@ -685,19 +686,12 @@ def parse_steps(step_strings,ingredient_list):
         sentences = sent_tokenize(og_step)#tokenizer.tokenize(og_step)
         for sentence in sentences:
             parsed_steps.append(parse_into_step(sentence,ingredient_list))
-    # split_steps = []
-    # for step in parsed_steps:
-    #     split_steps += step.split_up()
-    # print split_steps
 
     return parsed_steps
 
 
 def parse_url_to_class(url):
-    # response = urllib2.urlopen(url)
-    # html = response.read()
-    # print html
-    #try:
+  
     r = requests.get(url)
     cont = r.content
     soup = BeautifulSoup(cont, "html.parser")
@@ -708,9 +702,7 @@ def parse_url_to_class(url):
     strs_steps = [raw.text for raw in raw_steps]
     parsed_steps = parse_steps(strs_steps,parsed_ingred)
     parsed_recipe = Recipe(parsed_ingred,parsed_steps)
-    #except Exception as ex:
-     #   print ex
-      #  parsed_recipe = False
+ 
     return parsed_recipe
 
 def interface():
