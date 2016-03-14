@@ -2,7 +2,6 @@
 
 import urllib2
 import requests
-from pymongo import MongoClient
 from bs4 import BeautifulSoup
 import copy
 import nltk.data
@@ -265,7 +264,7 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
+prep_actions = ['dredge','melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
 cook_actions = ['preheat','heat','bake','simmer','fry','roast','grill','saute','broil']
 post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve','sprinkle']
 all_actions = prep_actions+cook_actions+post_actions
@@ -368,10 +367,16 @@ def parse_into_ingredient(input_string):
         except ValueError:
             quant = None
 
-    unitRecord = kb.getUnit(string_tokens[0])
-    if unitRecord:
-        unit = unitRecord["name"]
-        string_tokens = string_tokens[1:]
+    unit_index = 0
+    while unit_index < len(string_tokens):
+        unit_record = kb.getUnit(string_tokens[unit_index])
+        if unit_record:
+            break
+        unit_index += 1
+
+    if unit_record:
+        unit = unit_record["name"]
+        string_tokens = string_tokens[:unit_index] + string_tokens[unit_index+1:]
     else:
         if quant:
             unit = "count"
@@ -776,7 +781,7 @@ def parse_url_to_class(url):
     return parsed_recipe
 
 def interface():
-    print "\nHi, my name is Samwise Gamgee. I'm learning to cook, and I'd love to help you today!\n"
+    print "\nHi, my name is Sam. I'm learning to cook, and I'd love to help you today!\n"
 
     recipe = False
     while True:
