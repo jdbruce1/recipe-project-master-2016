@@ -136,6 +136,7 @@ class Recipe:
             new_ingredient = copy.copy(ingredient)
             if ingredient.name == "salt" and transformType == "to-low-sodium":
                 new_ingredient = None
+                ingredient_transforms[ingredient.name] = None
             else:
                 ingredientInfo = kb.searchIngredientsFor(ingredient.name)
                 if ingredientInfo:
@@ -220,7 +221,7 @@ class Step:
 
     def transformStepIngredients(self, new_ingredient_list, ingredient_transforms):
         newIngredients = []
-        new_text = self.text
+        new_text = self.text.lower()
         for ingredient in self.ingredients:
             try:
                 new_ingredient_name = ingredient_transforms[ingredient.name]
