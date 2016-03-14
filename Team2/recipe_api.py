@@ -250,9 +250,9 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+prep_actions = ['line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
 cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute','broil']
-post_actions = ['cool','let','discard','drain','remove','garnish','season','serve']
+post_actions = ['top','cool','let','discard','drain','remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
 
 cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler']
@@ -506,12 +506,16 @@ class Ingredient:
         # identify what kind of unit the current ingredient is
         print "unit is " + self.unit
         unit_record = kb.getUnit(self.unit)
-        unit_type = unit_record["type"]
+        try:
+            unit_type = unit_record["type"]
+            old_amount = self.quant * unit_record["#default"]
+        except TypeError:
+            unit_type = "count"
+            old_amount = self.quant
         print "unit type is " + unit_type
         # get the number of that unit
-        old_amount = self.quant * unit_record["#default"]
         print "old amount: " + str(old_amount)
-        old_count = 0
+        # old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
 
         
@@ -796,7 +800,7 @@ def main():
     #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    autograder("http://allrecipes.com/recipe/244806/low-carb-carbonara/?internalSource=search%20result&referringContentType=search%20results")
+    #autograder("http://allrecipes.com/recipe/244806/low-carb-carbonara/?internalSource=search%20result&referringContentType=search%20results")
     # interface()
     interface()
 
