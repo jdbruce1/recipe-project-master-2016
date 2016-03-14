@@ -708,16 +708,16 @@ def parse_url_to_class(url):
     return parsed_recipe
 
 def interface():
-    print "Welcome to the Recipe API"
+    print "Hi, my name is Sarah. I'm learning to cook, and I'd love to help you today!"
 
     recipe = False
     while True:
 
         while not recipe:
-            url = raw_input("Please enter a recipe url from AllRecipes.com: ")
+            url = raw_input("Please give me a URL from allrecipes.com: \n")
             recipe = parse_url_to_class(url)
 
-        print "\nGot it. What would you like to do?\n"
+        print "\nGot it. What would you like me to do?\n"
         print "1: View recipe"
         print "2: View ingredients"
         print "3: View steps"
@@ -729,25 +729,25 @@ def interface():
 
         func = raw_input("\n")
         while func not in choices:
-            func = raw_input("Please enter a number 1-6: ")
+            func = raw_input("I'm sorry, I only understand options from 1-6: ")
 
         if func == "1":
-            print("Here is your recipe: \n")
+            print("Here, I've made your recipe, just for you! \n")
             for ing in recipe.ingredients:
                 ing.print_ingredient()
             print "Steps:\n"
             recipe.pprint_steps()
         elif func == "2":
-            print "\nGetting ingredient list:"
+            print "\nThese are the ingredients in your recipe. Tasty!"
             for ing in recipe.ingredients:
                 ing.print_ingredient()
         elif func == "3":
-            print "\nGetting recipe steps:"
+            print "\nHere's the steps you wanted to see. I'm sure you can do it!"
             for step in recipe.steps:
                 step.print_step()
         elif func == "4":
             while True:
-                print "\nWhich transformation would you like to do?"
+                print "\nHow can I transform your recipe today?"
                 print "1: Transform to vegetarian"
                 print "2: Transform from vegetarian"
                 print "3: Transform to pescatarian"
@@ -759,7 +759,7 @@ def interface():
                 print "9: Transform from low sodium"
                 print "10: Transform to low glycemic index"
                 print "11: Transform from low glycemic index"
-                print "12: Go back"
+                print "12: Go back to previous options"
 
                 transformType = raw_input("\n")
 
