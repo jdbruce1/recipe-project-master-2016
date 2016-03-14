@@ -639,7 +639,7 @@ class Ingredient:
 
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
-        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
+        if ing_dict["measurement"] == [] or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
                 ing_amount = str(ing_dict["quantity"])
             else:
@@ -648,12 +648,15 @@ class Ingredient:
             ing_amount = str(ing_dict["quantity"]) + " " + ing_dict["measurement"]
         ing_descript = ing_dict["descriptor"]
         ing_name = " " + ing_dict["name"]
+        
         ing_prep = ing_dict["preparation"]
+        
 
         ing_string = ing_amount + ": " 
         ing_string += str(ing_descript) 
-        ing_string += ing_name + ", " + ing_prep
-
+        
+        ing_string += ing_name + ", " + str(ing_prep)
+       
         print ing_string
         return
 
