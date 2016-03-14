@@ -109,8 +109,8 @@ value = [{
         {"meat": ["tofu"], 
         "fish": ["tofu"],
         "beef": ["portobello mushrooms"],
-        "bacon": ["panko"],
-        "prosciutto": ["panko"],
+        "bacon": ["bread crumbs"],
+        "prosciutto": ["bread crumbs"],
         "meat stock": ["vegetable stock"]
         }
     },
@@ -123,8 +123,8 @@ value = [{
         "steak": ["tuna steak"],
         "pork": ["tilapia"],
         "poultry": ["tilapia"],
-        "bacon": ["panko"],
-        "prosciutto": ["panko"],
+        "bacon": ["bread crumbs"],
+        "prosciutto": ["bread crumbs"],
         "meat stock": ["vegetable stock"]
         }
     }]
