@@ -574,7 +574,9 @@ class Ingredient:
         ing_name = " " + ing_dict["name"]
         ing_prep = self.prep_desc
 
-        if len(ing_descript) < 1 or ing_descript == None:
+        if ing_descript == None:
+            ing_string = ing_amount + ing_name
+        elif len(ing_descript) < 1:
             ing_string = ing_amount + ing_name
         else:
             ing_string = ing_amount
