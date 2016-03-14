@@ -132,27 +132,28 @@ class Recipe:
         new_ingredient_list = []
         ingredient_transforms = {}
         for ingredient in self.ingredients:
+            new_ingredient = copy.copy(ingredient)
             if ingredient.name == "salt" and transformType == "to-low-sodium":
                 new_ingredient = None
             else:
-                new_ingredient = copy.copy(ingredient)
                 ingredientInfo = kb.searchIngredientsFor(ingredient.name)
-                fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
-                try:
-                    if fieldValue == avoid:
-                        lineage = kb.getIngredientParentLineage(ingredientInfo)
-                        new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
-                        if new_ingredient_name:
-                            new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                if ingredientInfo:
+                    fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
+                    try:
+                        if fieldValue == avoid:
+                            lineage = kb.getIngredientParentLineage(ingredientInfo)
+                            new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
+                            if new_ingredient_name:
+                                new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                                new_ingredient.descriptor = None
+                                ingredient_transforms[ingredient.name] = new_ingredient_name
+                            else:
+                                new_ingredient = None
+                                ingredient_transforms[ingredient.name] = None
+                        elif ingredient.descriptor == toRemove:
                             new_ingredient.descriptor = None
-                            ingredient_transforms[ingredient.name] = new_ingredient_name
-                        else:
-                            new_ingredient = None
-                            ingredient_transforms[ingredient.name] = None
-                    elif ingredient.descriptor == toRemove:
-                        new_ingredient.descriptor = None
-                except KeyError:
-                    print "Ingredient has no key for " + field
+                    except KeyError:
+                        print "Ingredient has no key for " + field
             if new_ingredient:
                 new_ingredient_list.append(new_ingredient)
 
@@ -569,7 +570,13 @@ class Ingredient:
 
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
-        ing_amount = ing_dict["quantity"] + " " + ing_dict["measurement"]
+        if not ing_dict["measurement"] or ing_dict["measurement"] == "count":
+            if ing_dict["quantity"]:
+                ing_amount = ing_dict["quantity"]
+            else:
+                ing_amount = ""
+        else:
+            ing_amount = ing_dict["quantity"] + " " + ing_dict["measurement"]
         ing_descript = self.descriptor
         ing_name = " " + ing_dict["name"]
         ing_prep = self.prep_desc
@@ -598,15 +605,14 @@ def adjust_units(quant, unit_type):
     new_quant = quant
     if unit_type == "mass":
         if quant < 8:
-            new_quant = round(quant, 1)
+            new_quant = round(quant, 2)
             if new_quant == 1:
                 new_unit = "ounce"
             else:
                 new_unit = "ounces"
         else:
             pounds = kb.getUnit("pounds")
-            new_quant = quant
-            new_quant = round(quant/float(pounds["#default"]), 1)
+            new_quant = round(quant/float(pounds["#default"]), 2)
             if new_quant == 1:
                 new_unit = "pound"
             else:
@@ -614,23 +620,23 @@ def adjust_units(quant, unit_type):
     elif unit_type == "volume":
         if quant < .0625:
             tsps = kb.getUnit("teaspoons")
-            new_quant = round(quant/float(tsps["#default"]), 1)
+            new_quant = round(quant/float(tsps["#default"]), 2)
             if new_quant == 1:
                 new_unit = "teaspoon"
             else:
                 new_unit = "teaspoons"
         elif quant < .25:
             tbsps = kb.getUnit("tablespoons")
-            new_quant = round(quant/float(tbsps["#default"]), 1)
+            new_quant = round(quant/float(tbsps["#default"]), 2)
         elif quant < 8:
-            new_quant = round(quant, 1)
+            new_quant = round(quant, 2)
             if new_quant == 1:
                 new_unit = "cup"
             else:
                 new_unit = "cups"
         else:
             gals = kb.getUnit("gallons")
-            new_quant = round(quant/float(gals["#default"]), 1)
+            new_quant = round(quant/float(gals["#default"]), 2)
             if new_quant == 1:
                 new_unit = "gallon"
             else:
