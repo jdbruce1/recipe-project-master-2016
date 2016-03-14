@@ -613,7 +613,7 @@ class Ingredient:
 
     def pprint_ingredient(self):
         ing_dict = self.convert_to_output()
-        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
+        if ing_dict["measurement"] == [] or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
                 ing_amount = str(ing_dict["quantity"])
             else:
@@ -624,7 +624,7 @@ class Ingredient:
         ing_name = " " + ing_dict["name"]
         ing_prep = self.prep_desc
 
-        if ing_descript == None:
+        if ing_descript == []:
             ing_string = ing_amount + ing_name
         elif len(ing_descript) < 1:
             ing_string = ing_amount + ing_name
@@ -634,7 +634,7 @@ class Ingredient:
                 if str(d) not in ing_name:
                     ing_string += " " + str(d)
             ing_string += ing_name
-        if ing_prep != [""] and ing_prep != None:
+        if ing_prep != [""] and ing_prep != []:
             print "ing_prep:"
             print ing_prep
             ing_string += ", " + str(ing_prep)
