@@ -622,7 +622,7 @@ class Ingredient:
             ing_amount = str(ing_dict["quantity"]) + " " + ing_dict["measurement"]
         ing_descript = self.descriptor
         ing_name = " " + ing_dict["name"]
-        ing_prep = self.prep_desc
+        ing_prep = ing_dict["preparation"]
 
         if ing_descript == []:
             ing_string = ing_amount + ing_name
@@ -635,8 +635,6 @@ class Ingredient:
                     ing_string += " " + str(d)
             ing_string += ing_name
         if ing_prep != [""] and ing_prep != []:
-            print "ing_prep:"
-            print ing_prep
             ing_string += ", " + str(ing_prep)
 
         print ing_string
