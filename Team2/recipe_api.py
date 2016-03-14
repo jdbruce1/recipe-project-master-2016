@@ -20,11 +20,16 @@ class Recipe:
         self.cooking_methods = []
         self.tools = []
         for step in steps:
-            self.tools.append(step.tools)
+            self.tools += step.tools
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
         if len(self.cooking_methods) == 0:
             self.primary_method = None
+        else:
+            self.primary_method = self.cooking_methods[-1]
+        for step in steps:
+            if step.action_type != "cook":
+                self.cooking_methods.append(step.action)
 
     def convert_to_output(self):
         output_dict = {}
@@ -259,13 +264,13 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute','broil']
-post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve']
+prep_actions = ['melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
+cook_actions = ['preheat','heat','bake','simmer','fry','roast','grill','saute','broil']
+post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve','sprinkle']
 all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler']
-prep_tools = ['knife','cup','bowl','dish','spoon','plate']
+cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler','pan','microwave']
+prep_tools = ['knife','cup','bowl','dish','spoon','plate','baster','sheet']
 all_tools = cooking_tools+prep_tools
 
 times = ['second','seconds','minute','minutes','hour','hours']
@@ -587,17 +592,26 @@ class Ingredient:
      
         output_dict = {}
         output_dict["name"] = self.name
-        output_dict["quantity"] = self.quant
+        if self.quant:
+            output_dict["quantity"] = self.quant
+        else:
+            output_dict["quantity"] = 0
         if self.unit == "count":
             output_dict["measurement"] = "unit"
         else:
             output_dict["measurement"] = self.unit
-        output_dict["descriptor"] = self.descriptor
-        output_dict["preparation"] = str(self.preparation)
+        if self.descriptor:
+            output_dict["descriptor"] = self.descriptor
+        else:
+            output_dict["descriptor"] = []
+        if self.preparation:
+            output_dict["preparation"] = str(self.preparation)
+        else:
+            output_dict["preparation"] = []
         output_dict["prep-description"] = str(self.prep_desc)
         return output_dict
 
-    def print_ingredient(self):
+    def pprint_ingredient(self):
         ing_dict = self.convert_to_output()
         if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
@@ -627,6 +641,27 @@ class Ingredient:
 
         print ing_string
         return
+
+    def print_ingredient(self):
+        ing_dict = self.convert_to_output()
+        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
+            if ing_dict["quantity"]:
+                ing_amount = str(ing_dict["quantity"])
+            else:
+                ing_amount = ""
+        else:
+            ing_amount = str(ing_dict["quantity"]) + " " + ing_dict["measurement"]
+        ing_descript = ing_dict["descriptor"]
+        ing_name = " " + ing_dict["name"]
+        ing_prep = ing_dict["preparation"]
+
+        ing_string = ing_amount + ": " 
+        ing_string += str(ing_descript) 
+        ing_string += ing_name + ", " + ing_prep
+
+        print ing_string
+        return
+
 
 def adjust_units(quant, unit_type):
     global kb
@@ -709,9 +744,9 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.healthTransformation("from-low-carb")
-    r_out = r_trans.convert_to_output()
-    print_out(r_out,"")
+    # r_trans = r.healthTransformation("from-low-carb")
+    r_out = r.convert_to_output()
+    # print_out(r_out,"")t_to_output()
 
     return r_out
 
@@ -769,11 +804,14 @@ def interface():
         if func == "1":
             print("Here, I've made your recipe, just for you! \n")
             for ing in recipe.ingredients:
-                ing.print_ingredient()
+                ing.pprint_ingredient()
             print "Steps:\n"
             recipe.pprint_steps()
         elif func == "2":
             print "\nThese are the ingredients in your recipe. Tasty!"
+            print "format: "
+            print "amount: [descriptors] ingredient_name, preparation"
+            print ""
             for ing in recipe.ingredients:
                 ing.print_ingredient()
         elif func == "3":
@@ -828,7 +866,7 @@ def interface():
 
                 print "Your transformed recipe is: "
                 for ing in newRecipe.ingredients:
-                    ing.print_ingredient()
+                    ing.pprint_ingredient()
                 print "Steps:\n"
                 newRecipe.pprint_steps()
 
