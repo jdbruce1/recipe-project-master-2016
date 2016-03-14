@@ -264,7 +264,7 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
+prep_actions = ['dredge','melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
 cook_actions = ['preheat','heat','bake','simmer','fry','roast','grill','saute','broil']
 post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve','sprinkle']
 all_actions = prep_actions+cook_actions+post_actions
@@ -644,7 +644,7 @@ class Ingredient:
 
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
-        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
+        if ing_dict["measurement"] == [] or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
                 ing_amount = str(ing_dict["quantity"])
             else:
@@ -653,12 +653,15 @@ class Ingredient:
             ing_amount = str(ing_dict["quantity"]) + " " + ing_dict["measurement"]
         ing_descript = ing_dict["descriptor"]
         ing_name = " " + ing_dict["name"]
+        
         ing_prep = ing_dict["preparation"]
+        
 
         ing_string = ing_amount + ": " 
         ing_string += str(ing_descript) 
-        ing_string += ing_name + ", " + ing_prep
-
+        
+        ing_string += ing_name + ", " + str(ing_prep)
+       
         print ing_string
         return
 
@@ -778,7 +781,7 @@ def parse_url_to_class(url):
     return parsed_recipe
 
 def interface():
-    print "\nHi, my name is Samwise Gamgee. I'm learning to cook, and I'd love to help you today!\n"
+    print "\nHi, my name is Sam. I'm learning to cook, and I'd love to help you today!\n"
 
     recipe = False
     while True:
