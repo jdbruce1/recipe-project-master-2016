@@ -132,24 +132,27 @@ class Recipe:
         new_ingredient_list = []
         ingredient_transforms = {}
         for ingredient in self.ingredients:
-            new_ingredient = copy.copy(ingredient)
-            ingredientInfo = kb.searchIngredientsFor(ingredient.name)
-            fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
-            try:
-                if fieldValue == avoid:
-                    lineage = kb.getIngredientParentLineage(ingredientInfo)
-                    new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
-                    if new_ingredient_name:
-                        new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+            if ingredient.name == "salt" and transformType == "to-low-sodium":
+                new_ingredient = None
+            else:
+                new_ingredient = copy.copy(ingredient)
+                ingredientInfo = kb.searchIngredientsFor(ingredient.name)
+                fieldValue = kb.getIngredientInheritedValue(ingredientInfo, field)
+                try:
+                    if fieldValue == avoid:
+                        lineage = kb.getIngredientParentLineage(ingredientInfo)
+                        new_ingredient_name = self._searchForSimilarIngredient(field, avoid, lineage)
+                        if new_ingredient_name:
+                            new_ingredient = ingredient.convert_to_new_ingred(new_ingredient_name)
+                            new_ingredient.descriptor = None
+                            ingredient_transforms[ingredient.name] = new_ingredient_name
+                        else:
+                            new_ingredient = None
+                            ingredient_transforms[ingredient.name] = None
+                    elif ingredient.descriptor == toRemove:
                         new_ingredient.descriptor = None
-                        ingredient_transforms[ingredient.name] = new_ingredient_name
-                    else:
-                        new_ingredient = None
-                        ingredient_transforms[ingredient.name] = None
-                elif ingredient.descriptor == toRemove:
-                    new_ingredient.descriptor = None
-            except KeyError:
-                print "Ingredient has no key for " + field
+                except KeyError:
+                    print "Ingredient has no key for " + field
             if new_ingredient:
                 new_ingredient_list.append(new_ingredient)
 
