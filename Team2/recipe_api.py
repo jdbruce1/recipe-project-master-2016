@@ -515,7 +515,7 @@ class Ingredient:
         print "unit type is " + unit_type
         # get the number of that unit
         print "old amount: " + str(old_amount)
-        # old_count = 0
+        old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
 
         
