@@ -562,7 +562,7 @@ class Ingredient:
         output_dict["name"] = self.name
         output_dict["quantity"] = str(self.quant)
         output_dict["measurement"] = str(self.unit)
-        output_dict["descriptor"] = " ".join(self.descriptor)
+        output_dict["descriptor"] = self.descriptor
         output_dict["preparation"] = str(self.preparation)
         output_dict["prep-description"] = str(self.prep_desc)
         return output_dict
