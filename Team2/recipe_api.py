@@ -21,18 +21,21 @@ class Recipe:
         self.cooking_methods = []
         self.tools = []
         for step in steps:
-            self.tools.append(step.tools)
+            self.tools += step.tools
             if step.action_type == 'cook':
                 self.cooking_methods.append(step.action)
         if len(self.cooking_methods) == 0:
             self.primary_method = None
         else:
             self.primary_method = self.cooking_methods[-1]
+        for step in steps:
+            if step.action_type != "cook":
+                self.cooking_methods.append(step.action)
 
     def convert_to_output(self):
         output_dict = {}
         output_dict["ingredients"] = [ing.convert_to_output() for ing in self.ingredients]
-        output_dict["primary_cooking"] = self.primary_method
+        output_dict["primary cooking method"] = self.primary_method
         output_dict["cooking methods"] = self.cooking_methods
         output_dict["cooking tools"] = self.tools
         return output_dict
@@ -262,13 +265,13 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute','broil']
-post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve']
+prep_actions = ['melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
+cook_actions = ['preheat','heat','bake','simmer','fry','roast','grill','saute','broil']
+post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve','sprinkle']
 all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler']
-prep_tools = ['knife','cup','bowl','dish','spoon','plate']
+cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler','pan','microwave']
+prep_tools = ['knife','cup','bowl','dish','spoon','plate','baster','sheet']
 all_tools = cooking_tools+prep_tools
 
 times = ['second','seconds','minute','minutes','hour','hours']
@@ -584,7 +587,10 @@ class Ingredient:
      
         output_dict = {}
         output_dict["name"] = self.name
-        output_dict["quantity"] = self.quant
+        if self.quant:
+            output_dict["quantity"] = self.quant
+        else:
+            output_dict["quantity"] = 0
         if self.unit == "count":
             output_dict["measurement"] = "unit"
         else:
@@ -708,7 +714,7 @@ def autograder(url):
     r = parse_url_to_class(url)
     # r_trans = r.healthTransformation("from-low-carb")
     r_out = r.convert_to_output()
-    print_out(r_out,"")
+    # print_out(r_out,"")
 
     return r_out
 
