@@ -175,6 +175,11 @@ class Recipe:
             lineage = lineage[:-1]
         return None
 
+    def pprint_steps(self):
+        steps = self.steps
+        for s in steps:
+            print s.text
+
         
 
 
@@ -709,9 +714,8 @@ def interface():
             print("Here is your recipe: \n")
             for ing in recipe.ingredients:
                 ing.print_ingredient()
-                print "Steps:\n"
-                for step in recipe.steps:
-                    step.print_step()
+            print "Steps:\n"
+            recipe.pprint_steps()
         elif func == "2":
             print "\nGetting ingredient list:"
             for ing in recipe.ingredients:
@@ -770,8 +774,7 @@ def interface():
                 for ing in newRecipe.ingredients:
                     ing.print_ingredient()
                 print "Steps:\n"
-                for step in newRecipe.steps:
-                    step.print_step()
+                newRecipe.pprint_steps()
 
                 break 
 
