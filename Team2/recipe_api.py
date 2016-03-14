@@ -570,16 +570,22 @@ class Ingredient:
     def print_ingredient(self):
         ing_dict = self.convert_to_output()
         ing_amount = ing_dict["quantity"] + " " + ing_dict["measurement"]
-        ing_descript = " " + ing_dict["descriptor"]
+        ing_descript = self.descriptor
         ing_name = " " + ing_dict["name"]
-        ing_prep = ", " + ing_dict["preparation"]
+        ing_prep = self.prep_desc
 
-        if ing_descript == []:
+        if len(ing_descript) < 1 or ing_descript == None:
             ing_string = ing_amount + ing_name
         else:
-            ing_string = ing_amount + ing_descript + ing_name
-        if ing_prep != [""]:
-            ing_string += ing_prep
+            ing_string = ing_amount
+            for d in ing_descript:
+                if str(d) not in ing_name:
+                    ing_string += " " + str(d)
+            ing_string += ing_name
+        if ing_prep != [""] and ing_prep != None:
+            print "ing_prep:"
+            print ing_prep
+            ing_string += ", " + str(ing_prep)
 
         print ing_string
         return
