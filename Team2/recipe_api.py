@@ -562,25 +562,52 @@ class Ingredient:
 
 def adjust_units(quant, unit_type):
     global kb
-    units = kb.getAllUnitsOfType(unit_type)
-    adjusted_quants = {}
-    best_quant = 8000 #higher than anything normal
-    best_low_quant = 0
-    best_unit = None
-    for unit in units:
-        new_quant = round(quant/float(unit["#default"]), 1)
-        print str(new_quant) + unit["name"]
-        if new_quant >= 1 and new_quant < best_quant:
-            best_quant = new_quant
-            best_unit = unit["name"]
-        elif best_quant == 8000:
-            if new_quant > best_low_quant:
-                best_low_quant = new_quant
-                best_unit = unit["name"]
-    if best_quant == 8000:
-        best_quant = best_low_quant
+    if unit_type == "mass":
+        if quant < 8:
+            new_quant = round(quant, 1)
+            if new_quant == 1:
+                new_unit = "ounce"
+            else:
+                new_unit = "ounces"
+        else:
+            pounds = kb.getUnit("pounds")
+            new_quant = quant
+            new_quant = round(quant/float(pounds["#default"]), 1)
+            if new_quant == 1:
+                new_unit = "pound"
+            else:
+                new_unit = "pounds"
+    elif unit_type == "volume":
+        if quant < .0625:
+            tsps = kb.getUnit("teaspoons")
+            new_quant = round(quant/float(tsps["#default"]), 1)
+            if new_quant == 1:
+                new_unit = "teaspoon"
+            else:
+                new_unit = "teaspoons"
+        elif quant < .25:
+            tbsps = kb.getUnit("tablespoons")
+            new_quant = round(quant/float(tbsps["#default"]), 1)
+        elif quant < 8:
+            new_quant = round(quant, 1)
+            if new_quant == 1:
+                new_unit = "cup"
+            else:
+                new_unit = "cups"
+        else:
+            gals = kb.getUnit("gallons")
+            new_quant = round(quant/float(gals["#default"]), 1)
+            if new_quant == 1:
+                new_unit = "gallon"
+            else:
+                new_unit = "gallons"
 
-    return {"quant": best_quant, "unit": best_unit}
+    elif unit_type == "count":
+        new_quant = quant
+        new_unit = "count"
+
+    return {"quant": new_quant, "unit": new_unit}
+
 
 
 
@@ -779,5 +806,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 

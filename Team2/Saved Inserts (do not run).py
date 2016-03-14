@@ -76,9 +76,15 @@ value = [{
      },
      {
         "name": "pounds",
-        "alt_names": ["lb","lb.","lbs","lbs."],
-        "type": "volume",
+        "alt_names": ["pound", "lb","lb.","lbs","lbs."],
+        "type": "mass",
         "#default": 16
+     },
+     {
+        "name": "fluid ounces",
+        "alt_names": ["fluid ounce","fl. oz.","fl. ounces","fl. ounce","fl. oz","fl oz.","fl oz"],
+        "type": "volume",
+        "#default": .125
      }]
 kb.collection.insert(value)
 
