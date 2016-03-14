@@ -246,13 +246,13 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute']
+prep_actions = ['divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute','broil']
 post_actions = ['cool','let','discard','drain','remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet']
-prep_tools = ['knife','cup','bowl','dish']
+cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler']
+prep_tools = ['knife','cup','bowl','dish','spoon','plate']
 all_tools = cooking_tools+prep_tools
 
 times = ['second','seconds','minute','minutes','hour','hours']
@@ -313,7 +313,7 @@ def parse_into_ingredient(input_string):
     unit = None
     name = None
     input_string = input_string.replace('broth','stock')
-    print input_string
+    # print input_string
     #tokenize 
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
     descriptor = []
@@ -417,6 +417,7 @@ def parse_into_ingredient(input_string):
         name = name_list[0]
         string_tokens = name_list[1]
     else:
+        str_token_store = copy.copy(string_tokens)
         if string_tokens[-1][-1] != "s":
             string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
         name_list = name_from_remainder(string_tokens)
@@ -424,9 +425,20 @@ def parse_into_ingredient(input_string):
             name = name_list[0]
             string_tokens = name_list[1]
         else:
-            name = " ".join(string_tokens)
-            string_tokens = []
-            print "Ingredient not recogized in: " + name
+            name_list = name_from_remainder(string_tokens[:-1])
+            if name_list:
+                name = name_list[0]
+                string_tokens = name_list[1]+string_tokens[-1]
+            else:
+                string_tokens[-2] = pattern.en.pluralize(string_tokens[-2])
+                name_list = name_from_remainder(string_tokens[:-1])
+                if name_list:
+                    name = name_list[0]
+                    string_tokens = name_list[1]+[string_tokens[-1]]
+                else:
+                    name = " ".join(str_token_store)
+                    string_tokens = []
+                    print "Ingredient not recogized in: " + name
 
     # print input_string + ": " + name
     
