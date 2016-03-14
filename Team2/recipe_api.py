@@ -594,6 +594,8 @@ class Ingredient:
 
 def adjust_units(quant, unit_type):
     global kb
+    new_unit = unit_type
+    new_quant = quant
     if unit_type == "mass":
         if quant < 8:
             new_quant = round(quant, 1)
