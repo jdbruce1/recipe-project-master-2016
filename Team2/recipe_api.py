@@ -75,23 +75,27 @@ class Recipe:
             raise StandardError("Unrecognized transformation.")
 
         global kb
-        newRecipe = Recipe(copy.copy(self.ingredients), copy.copy(self.steps))
 
-
-        for ingredient in newRecipe.ingredients:
+        newIngs = []
+        newSteps = copy.copy(self.steps)
+        for ingredient in self.ingredients:
             ingredientInfo = kb.searchIngredientsFor(ingredient.name)
             if ingredientInfo:
-                if (ingredientInfo["decomposition"] and ingredientInfo["decomposition"]!=None):
-                    recipeUrl = ingredientInfo["decomposition"]
-                    parsedRecipe = parse_url_to_class(recipeUrl)
-                    addIng = parsedRecipe.ingredients
-                    addSteps = parsedRecipe.steps
-                    newRecipe.ingredients+=addIng # assume to ok to list same ingredients twice for now
-                    newRecipe.steps = addSteps + newRecipe.steps # new steps are first, so if "add stock" shows up later, it's ok
-                      
-            #except KeyError:
-             #   pass
-
+                try:
+                    if (ingredientInfo["decomposition"] and ingredientInfo["decomposition"]!=None):
+                        recipeUrl = ingredientInfo["decomposition"]
+                        parsedRecipe = parse_url_to_class(recipeUrl)
+                        addIngs = parsedRecipe.ingredients
+                        addSteps = parsedRecipe.steps
+                       
+                        newIngs+=addIngs # assume to ok to list same ingredients twice for now
+                        newSteps = addSteps + newSteps # new steps are first, so if "add stock" shows up later, it's ok
+                    else:
+                        newIngs.append(ingredient)     
+                except KeyError:
+                    newIngs.append(ingredient)
+                    pass
+        newRecipe = Recipe(newIngs,newSteps)
         return newRecipe
 
     def healthTransformation(self, transformType):
@@ -171,6 +175,11 @@ class Recipe:
             lineage = lineage[:-1]
         return None
 
+    def pprint_steps(self):
+        steps = self.steps
+        for s in steps:
+            print s.text
+
         
 
 
@@ -246,13 +255,13 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
-cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute']
-post_actions = ['cool','let','discard','drain','remove','garnish','season','serve']
+prep_actions = ['arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','cover','sprinkle']
+cook_actions = ['heat','cook','bake','simmer','fry','roast','grill','saute','broil']
+post_actions = ['top','cool','let','discard','drain','remove','garnish','season','serve']
 all_actions = prep_actions+cook_actions+post_actions
 
-cooking_tools = ['oven','skillet']
-prep_tools = ['knife','cup','bowl','dish']
+cooking_tools = ['oven','skillet','pot','whisk','range','burner','broiler']
+prep_tools = ['knife','cup','bowl','dish','spoon','plate']
 all_tools = cooking_tools+prep_tools
 
 times = ['second','seconds','minute','minutes','hour','hours']
@@ -279,10 +288,13 @@ def parse_into_step(input_string, ingredient_list):
             action_type = 'post'
         elif word in times and index != 0:
             time = string_tokens[index-1]
-            if word == 'hour' or word == 'hours':
-                time = time * 60
-            elif word == 'second' or word == 'seconds':
-                time = time / 60
+            try:
+                if word == 'hour' or word == 'hours':
+                    time = time * 60
+                elif word == 'second' or word == 'seconds':
+                    time = time / 60
+            except TypeError:
+                time = None
         index += 1
 
     if not action:
@@ -313,7 +325,8 @@ def parse_into_ingredient(input_string):
     unit = None
     name = None
     input_string = input_string.replace('broth','stock')
-    print input_string
+
+    #print input_string
     #tokenize 
     string_tokens = [w.lower() for w in nltk.wordpunct_tokenize(input_string)]
     descriptor = []
@@ -417,6 +430,7 @@ def parse_into_ingredient(input_string):
         name = name_list[0]
         string_tokens = name_list[1]
     else:
+        str_token_store = copy.copy(string_tokens)
         if string_tokens[-1][-1] != "s":
             string_tokens[-1] = pattern.en.pluralize(string_tokens[-1])
         name_list = name_from_remainder(string_tokens)
@@ -424,9 +438,20 @@ def parse_into_ingredient(input_string):
             name = name_list[0]
             string_tokens = name_list[1]
         else:
-            name = " ".join(string_tokens)
-            string_tokens = []
-            print "Ingredient not recogized in: " + name
+            name_list = name_from_remainder(string_tokens[:-1])
+            if name_list:
+                name = name_list[0]
+                string_tokens = name_list[1]+string_tokens[-1]
+            else:
+                string_tokens[-2] = pattern.en.pluralize(string_tokens[-2])
+                name_list = name_from_remainder(string_tokens[:-1])
+                if name_list:
+                    name = name_list[0]
+                    string_tokens = name_list[1]+[string_tokens[-1]]
+                else:
+                    name = " ".join(str_token_store)
+                    string_tokens = []
+                    print "Ingredient not recogized in: " + name
 
     # print input_string + ": " + name
     
@@ -486,10 +511,14 @@ class Ingredient:
         # identify what kind of unit the current ingredient is
         print "unit is " + self.unit
         unit_record = kb.getUnit(self.unit)
-        unit_type = unit_record["type"]
+        try:
+            unit_type = unit_record["type"]
+            old_amount = self.quant * unit_record["#default"]
+        except TypeError:
+            unit_type = "count"
+            old_amount = self.quant
         print "unit type is " + unit_type
         # get the number of that unit
-        old_amount = self.quant * unit_record["#default"]
         print "old amount: " + str(old_amount)
         old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
@@ -656,32 +685,32 @@ def parse_steps(step_strings,ingredient_list):
         sentences = sent_tokenize(og_step)#tokenizer.tokenize(og_step)
         for sentence in sentences:
             parsed_steps.append(parse_into_step(sentence,ingredient_list))
-    split_steps = []
-    for step in parsed_steps:
-        split_steps += step.split_up()
+    # split_steps = []
+    # for step in parsed_steps:
+    #     split_steps += step.split_up()
     # print split_steps
 
-    return split_steps
+    return parsed_steps
 
 
 def parse_url_to_class(url):
     # response = urllib2.urlopen(url)
     # html = response.read()
     # print html
-    try:
-        r = requests.get(url)
-        cont = r.content
-        soup = BeautifulSoup(cont, "html.parser")
-        raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
-        strs_ingred = [raw.text for raw in raw_ingred]
-        parsed_ingred = [parse_into_ingredient(string_in) for string_in in strs_ingred]
-        raw_steps = soup.find_all('span', 'recipe-directions__list--item')
-        strs_steps = [raw.text for raw in raw_steps]
-        parsed_steps = parse_steps(strs_steps,parsed_ingred)
-        parsed_recipe = Recipe(parsed_ingred,parsed_steps)
-    except Exception as ex:
-        print ex
-        parsed_recipe = False
+    #try:
+    r = requests.get(url)
+    cont = r.content
+    soup = BeautifulSoup(cont, "html.parser")
+    raw_ingred = soup.find_all('span', 'recipe-ingred_txt added')
+    strs_ingred = [raw.text for raw in raw_ingred]
+    parsed_ingred = [parse_into_ingredient(string_in) for string_in in strs_ingred]
+    raw_steps = soup.find_all('span', 'recipe-directions__list--item')
+    strs_steps = [raw.text for raw in raw_steps]
+    parsed_steps = parse_steps(strs_steps,parsed_ingred)
+    parsed_recipe = Recipe(parsed_ingred,parsed_steps)
+    #except Exception as ex:
+     #   print ex
+      #  parsed_recipe = False
     return parsed_recipe
 
 def interface():
@@ -694,7 +723,7 @@ def interface():
             url = raw_input("Please enter a recipe url from AllRecipes.com: ")
             recipe = parse_url_to_class(url)
 
-        print "Got it. What would you like to do?\n"
+        print "\nGot it. What would you like to do?\n"
         print "1: View recipe"
         print "2: View ingredients"
         print "3: View steps"
@@ -709,8 +738,11 @@ def interface():
             func = raw_input("Please enter a number 1-6: ")
 
         if func == "1":
-            print "\nPrinting your recipe:"
-            print_out(recipe.convert_to_output(), " ")
+            print("Here is your recipe: \n")
+            for ing in recipe.ingredients:
+                ing.print_ingredient()
+            print "Steps:\n"
+            recipe.pprint_steps()
         elif func == "2":
             print "\nGetting ingredient list:"
             for ing in recipe.ingredients:
@@ -766,7 +798,10 @@ def interface():
                     break
 
                 print "Your transformed recipe is: "
-                print_out(newRecipe.convert_to_output(), " ") 
+                for ing in newRecipe.ingredients:
+                    ing.print_ingredient()
+                print "Steps:\n"
+                newRecipe.pprint_steps()
 
                 break 
 
@@ -799,7 +834,7 @@ def main():
     #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    autograder("http://allrecipes.com/recipe/244806/low-carb-carbonara/?internalSource=search%20result&referringContentType=search%20results")
+    #autograder("http://allrecipes.com/recipe/244806/low-carb-carbonara/?internalSource=search%20result&referringContentType=search%20results")
     # interface()
     interface()
 
