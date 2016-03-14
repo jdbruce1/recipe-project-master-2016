@@ -337,7 +337,11 @@ def parse_into_ingredient(input_string):
     #make parenthesized things descriptors
     if "(" in string_tokens:
         openIndex = string_tokens.index("(")
-        closeIndex = string_tokens.index(")")
+        closeIndex = openIndex
+        while closeIndex < len(string_tokens):
+            if ')' in string_tokens[closeIndex]:
+                break
+            closeIndex += 1
         inParens = string_tokens[openIndex+1:closeIndex]
         descriptor += inParens
         string_tokens = string_tokens[:openIndex] + string_tokens[closeIndex+1:]
