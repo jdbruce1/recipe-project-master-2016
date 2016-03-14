@@ -504,7 +504,7 @@ class Ingredient:
         global kb
         print "Converting " + self.name + " to " + new_name
         # identify what kind of unit the current ingredient is
-        print "unit is " + self.unit
+        # print "unit is " + self.unit
         unit_record = kb.getUnit(self.unit)
         try:
             unit_type = unit_record["type"]
@@ -512,9 +512,9 @@ class Ingredient:
         except TypeError:
             unit_type = "count"
             old_amount = self.quant
-        print "unit type is " + unit_type
+        # print "unit type is " + unit_type
         # get the number of that unit
-        print "old amount: " + str(old_amount)
+        # print "old amount: " + str(old_amount)
         old_count = 0
         old_ingred_record = kb.searchIngredientsFor(self.name)
 
@@ -524,19 +524,19 @@ class Ingredient:
             old_count = old_amount / old_c_to_v
         elif unit_type == "count":
             old_count = old_amount
-        print "old count: " + str(old_count)
+        # print "old count: " + str(old_count)
         if unit_type != "mass":
             old_c_to_m = float(kb.getIngredientInheritedValue(old_ingred_record, "count_to_mass"))
             mass = old_count * old_c_to_m
         else:
             mass = old_amount
-        print "mass: " + str(mass)
+        # print "mass: " + str(mass)
         new_ingred_record = kb.searchIngredientsFor(new_name)
 
         default_unit = kb.getIngredientInheritedValue(new_ingred_record, "default unit")
         new_c_to_v = float(kb.getIngredientInheritedValue(new_ingred_record, "count_to_volume"))
         new_c_to_m = float(kb.getIngredientInheritedValue(new_ingred_record, "count_to_mass"))
-        print "new default unit: " + default_unit
+        # print "new default unit: " + default_unit
         if default_unit == "mass":
             quant = mass
             unit = "ounces"
@@ -548,8 +548,8 @@ class Ingredient:
             unit = "cups"
         else:
             print "Something bad happened"
-        print "new quant " + str(quant)
-        print "new unit " + str(unit)
+        # print "new quant " + str(quant)
+        # print "new unit " + str(unit)
         adjusted_units = adjust_units(quant, default_unit)
 
         newIngredient = Ingredient(new_name,adjusted_units["quant"],adjusted_units["unit"],self.descriptor,self.preparation,self.prep_desc)
