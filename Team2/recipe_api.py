@@ -225,10 +225,7 @@ class Step:
                     new_text = replace_token_mentions(new_text, ingredient.name, "")  # does not look great
             except KeyError:
                 newIngredients.append(ingredient)
-        if len(newIngredients) is 0:
-            return None
-        else:
-            return Step(new_text, self.action, self.action_type, newIngredients, self.tools, self.time)
+        return Step(new_text, self.action, self.action_type, newIngredients, self.tools, self.time)
 
 
 def trim_and_join(str_tokens):
@@ -616,7 +613,7 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.healthTransformation("to-low-carb")
+    r_trans = r.healthTransformation("from-low-carb")
     r_out = r_trans.convert_to_output()
     print_out(r_out,"")
     return r_out
@@ -770,10 +767,11 @@ def main():
     # autograder("http://allrecipes.com/recipe/223360/eggplant-parmesan-for-the-slow-cooker/?internalSource=staff%20pick&referringContentType=home%20page")
     # autograder("http://allrecipes.com/recipe/213398/irish-potato-soup/")
     # autograder("http://allrecipes.com/recipe/8669/chicken-cordon-bleu-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
-    autograder("http://allrecipes.com/recipe/12023/one-dish-broccoli-rotini/?internalSource=search%20result&referringContentType=search%20results")
+    #autograder("http://allrecipes.com/recipe/12023/one-dish-broccoli-rotini/?internalSource=search%20result&referringContentType=search%20results")
     #autograder("http://allrecipes.com/recipe/24264/sloppy-joes-ii/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     #autograder("http://allrecipes.com/recipe/89539/slow-cooker-chicken-tortilla-soup/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
     # autograder("http://allrecipes.com/recipe/24059/creamy-rice-pudding/?internalSource=recipe%20hub&referringId=1&referringContentType=recipe%20hub")
+    autograder("http://allrecipes.com/recipe/244806/low-carb-carbonara/?internalSource=search%20result&referringContentType=search%20results")
     # interface()
     interface()
 
