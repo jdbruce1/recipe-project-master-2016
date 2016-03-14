@@ -26,11 +26,13 @@ class Recipe:
                 self.cooking_methods.append(step.action)
         if len(self.cooking_methods) == 0:
             self.primary_method = None
+        else:
+            self.primary_method = self.cooking_methods[-1]
 
     def convert_to_output(self):
         output_dict = {}
         output_dict["ingredients"] = [ing.convert_to_output() for ing in self.ingredients]
-        output_dict["primary cooking method"] = self.primary_method
+        output_dict["primary_cooking"] = self.primary_method
         output_dict["cooking methods"] = self.cooking_methods
         output_dict["cooking tools"] = self.tools
         return output_dict
@@ -704,8 +706,8 @@ def autograder(url):
     # your code here
     global kb
     r = parse_url_to_class(url)
-    r_trans = r.healthTransformation("from-low-carb")
-    r_out = r_trans.convert_to_output()
+    # r_trans = r.healthTransformation("from-low-carb")
+    r_out = r.convert_to_output()
     print_out(r_out,"")
 
     return r_out
