@@ -264,7 +264,7 @@ def replace_token_mentions(target, to_replace, replacement):
         size -= 1
     return target
 
-prep_actions = ['melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
+prep_actions = ['dredge','melt','basting','cook','blended','form','reduce','turning','melted','microwave','squeeze','separate','quarter','knead','grease','thaw','skim','dip','arrange','chop','slice','line','scrape','divide','strain','turn','beat','spread','spoon','pound','fold','cut','rinse','repeat','make','roll','season','combine','thread','oil','form','whisk','drizzle','preheat','transfer','place','pour','stir','add','mix','boil','coat','cover','sprinkle']
 cook_actions = ['preheat','heat','bake','simmer','fry','roast','grill','saute','broil']
 post_actions = ['return','top','cool','let','discard','drain','remove','garnish','season','serve','sprinkle']
 all_actions = prep_actions+cook_actions+post_actions
