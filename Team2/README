@@ -1,0 +1,15 @@
+~~~Sam, the young apprentice cooking computer~~~
+
+by Irina Rabkina, Will Molter, Jacob Bruce, and Rebecca Way, for
+EECS 337, Winter 2016
+
+Simply run the recipe_api.py file to talk to Sam!  Sam can read URLs from Allrecipes.com, and transform
+them into new recipes of several different kinds.  Whether you're a vegetarian, a diabetic, a meat lover,
+on the Atkins diet, Sam can make a recipe work for you.
+
+However, we used several outside libraries:
+Beautiful Soup 4
+Requests
+Pattern
+pymongo
+nltk

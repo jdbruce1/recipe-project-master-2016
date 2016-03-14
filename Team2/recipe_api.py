@@ -2,7 +2,6 @@
 
 import urllib2
 import requests
-from pymongo import MongoClient
 from bs4 import BeautifulSoup
 import copy
 import nltk.data
@@ -363,10 +362,16 @@ def parse_into_ingredient(input_string):
         except ValueError:
             quant = None
 
-    unitRecord = kb.getUnit(string_tokens[0])
-    if unitRecord:
-        unit = unitRecord["name"]
-        string_tokens = string_tokens[1:]
+    unit_index = 0
+    while unit_index < len(string_tokens):
+        unit_record = kb.getUnit(string_tokens[unit_index])
+        if unit_record:
+            break
+        unit_index += 1
+
+    if unit_record:
+        unit = unit_record["name"]
+        string_tokens = string_tokens[:unit_index] + string_tokens[unit_index+1:]
     else:
         if quant:
             unit = "count"
