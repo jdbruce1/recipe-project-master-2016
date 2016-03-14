@@ -592,7 +592,7 @@ class Ingredient:
         output_dict["prep-description"] = str(self.prep_desc)
         return output_dict
 
-    def print_ingredient(self):
+    def pprint_ingredient(self):
         ing_dict = self.convert_to_output()
         if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
             if ing_dict["quantity"]:
@@ -622,6 +622,27 @@ class Ingredient:
 
         print ing_string
         return
+
+    def print_ingredient(self):
+        ing_dict = self.convert_to_output()
+        if ing_dict["measurement"] is None or ing_dict["measurement"] == "count":
+            if ing_dict["quantity"]:
+                ing_amount = str(ing_dict["quantity"])
+            else:
+                ing_amount = ""
+        else:
+            ing_amount = str(ing_dict["quantity"]) + " " + ing_dict["measurement"]
+        ing_descript = ing_dict["descriptor"]
+        ing_name = " " + ing_dict["name"]
+        ing_prep = ing_dict["preparation"]
+
+        ing_string = ing_amount + ": " 
+        ing_string += str(ing_descript) 
+        ing_string += ing_name + ", " + ing_prep
+
+        print ing_string
+        return
+
 
 def adjust_units(quant, unit_type):
     global kb
@@ -764,11 +785,14 @@ def interface():
         if func == "1":
             print("Here, I've made your recipe, just for you! \n")
             for ing in recipe.ingredients:
-                ing.print_ingredient()
+                ing.pprint_ingredient()
             print "Steps:\n"
             recipe.pprint_steps()
         elif func == "2":
             print "\nThese are the ingredients in your recipe. Tasty!"
+            print "format: "
+            print "amount: [descriptors] ingredient_name, preparation"
+            print ""
             for ing in recipe.ingredients:
                 ing.print_ingredient()
         elif func == "3":
@@ -823,7 +847,7 @@ def interface():
 
                 print "Your transformed recipe is: "
                 for ing in newRecipe.ingredients:
-                    ing.print_ingredient()
+                    ing.pprint_ingredient()
                 print "Steps:\n"
                 newRecipe.pprint_steps()
 
