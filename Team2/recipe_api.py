@@ -441,12 +441,17 @@ def parse_into_ingredient(input_string):
                 name = name_list[0]
                 string_tokens = name_list[1]+string_tokens[-1]
             else:
-                string_tokens[-2] = pattern.en.pluralize(string_tokens[-2])
-                name_list = name_from_remainder(string_tokens[:-1])
-                if name_list:
-                    name = name_list[0]
-                    string_tokens = name_list[1]+[string_tokens[-1]]
-                else:
+                try:
+                    string_tokens[-2] = pattern.en.pluralize(string_tokens[-2])
+                    name_list = name_from_remainder(string_tokens[:-1])
+                    if name_list:
+                        name = name_list[0]
+                        string_tokens = name_list[1]+[string_tokens[-1]]
+                    else:
+                        name = " ".join(str_token_store)
+                        string_tokens = []
+                        print "Ingredient not recogized in: " + name
+                except IndexError:
                     name = " ".join(str_token_store)
                     string_tokens = []
                     print "Ingredient not recogized in: " + name
