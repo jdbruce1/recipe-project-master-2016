@@ -583,7 +583,10 @@ class Ingredient:
         output_dict = {}
         output_dict["name"] = self.name
         output_dict["quantity"] = self.quant
-        output_dict["measurement"] = self.unit
+        if self.unit == "count":
+            output_dict["measurement"] = "unit"
+        else:
+            output_dict["measurement"] = self.unit
         output_dict["descriptor"] = self.descriptor
         output_dict["preparation"] = str(self.preparation)
         output_dict["prep-description"] = str(self.prep_desc)
