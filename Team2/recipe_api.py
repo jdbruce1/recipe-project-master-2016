@@ -706,8 +706,12 @@ def interface():
             func = raw_input("Please enter a number 1-6: ")
 
         if func == "1":
-            print "\nPrinting your recipe:"
-            print_out(recipe.convert_to_output(), " ")
+            print("Here is your recipe: \n")
+            for ing in newRecipe.ingredients:
+                    ing.print_ingredient()
+                print "Steps:\n"
+                for step in newRecipe.steps:
+                    step.print_step()
         elif func == "2":
             print "\nGetting ingredient list:"
             for ing in recipe.ingredients:
