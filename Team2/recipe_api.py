@@ -221,7 +221,7 @@ class Step:
         print "Action: "+self.action
         print "Ingredients: "+", ".join([i.name for i in self.ingredients])
         print "Tools: "+ str(self.tools)
-        print "Time: " + str(self.time) + " minutes"
+        # print "Time: " + str(self.time) + " minutes"
 
     def transformStepIngredients(self, new_ingredient_list, ingredient_transforms):
         newIngredients = []
@@ -596,19 +596,35 @@ class Ingredient:
             output_dict["quantity"] = self.quant
         else:
             output_dict["quantity"] = 0
+
         if self.unit == "count":
             output_dict["measurement"] = "unit"
         else:
             output_dict["measurement"] = self.unit
+
+        if self.descriptor and not self.preparation:
+            temp_list = []
+            for desc in self.descriptor:
+                if desc and len(desc) > 2 and desc[-1] == "d" and desc[-2] == "e":
+                    self.preparation = desc
+                else:
+                    temp_list.append(desc)
+            self.descriptor = temp_list
+
         if self.descriptor:
-            output_dict["descriptor"] = self.descriptor
+            output_dict["descriptor"] = " ".join(self.descriptor)
         else:
-            output_dict["descriptor"] = []
-        if self.preparation:
+            output_dict["descriptor"] = ""#[]
+
+        if self.preparation and len(self.preparation)>0:
             output_dict["preparation"] = str(self.preparation)
         else:
-            output_dict["preparation"] = []
-        output_dict["prep-description"] = str(self.prep_desc)
+            output_dict["preparation"] = ""#[]
+
+        if self.prep_desc:
+            output_dict["prep-description"] = str(self.prep_desc)
+        else:
+            output_dict["prep-description"] = ""
         return output_dict
 
     def pprint_ingredient(self):
